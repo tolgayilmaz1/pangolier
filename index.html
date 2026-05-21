@@ -24,8 +24,8 @@ canvas{display:block}
 #tut span{display:inline-block;max-width:92%;background:linear-gradient(180deg,rgba(0,0,0,.88),rgba(35,8,18,.82));color:#ffd700;font-size:12px;padding:6px 18px;border-radius:20px;border:1px solid #ffd70066;box-shadow:0 0 14px rgba(255,215,0,.16)}
 
 /* NAME ENTRY */
-#nameOv{position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(30,15,60,.98),rgba(3,3,12,.98));z-index:40;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
-#nameBox{width:330px;max-width:92%;background:linear-gradient(180deg,#101026,#070711);border:1px solid #ff475766;border-radius:14px;padding:22px 18px;box-shadow:0 0 34px #ff475722}
+#nameOv{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;z-index:50}
+#nameBox{width:300px;max-width:92%;background:linear-gradient(180deg,#101026,#070711);border:1px solid #ff475766;border-radius:14px;padding:18px 16px;box-shadow:0 0 34px #ff475722;text-align:center}
 #nameBox h1{color:#ffd700;font-size:20px;letter-spacing:2px;margin-bottom:8px}
 #nameBox p{color:#888;font-size:11px;line-height:1.6;margin-bottom:14px}
 #nameFirstInput{width:230px;background:#03030b;color:#ffd700;border:2px solid #333;border-radius:8px;padding:12px 10px;text-align:center;font-family:'Courier New',monospace;font-size:17px;font-weight:bold;letter-spacing:1px;outline:none;text-transform:uppercase}
@@ -33,12 +33,21 @@ canvas{display:block}
 #btnNameContinue{margin-top:14px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 32px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755}
 #nameWarn{height:18px;color:#ff7675;font-size:10px;margin-top:8px}
 /* OVERLAY */
-#ov{position:absolute;inset:0;background:rgba(5,5,20,.95);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;z-index:10;overflow-y:auto}
-.tb{background:#0d0d22;color:#555;border:1px solid #222;padding:6px 16px;font-size:11px;font-family:'Courier New',monospace;cursor:pointer;border-radius:4px;transition:all .15s}
+#ov{position:absolute;inset:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;box-sizing:border-box}
+@media(max-height:600px){#ov{justify-content:flex-start;padding-top:8px;padding-bottom:12px}}
+
+#ov>*{flex-shrink:0}
+#btnStart{flex-shrink:0 !important}
+@media(max-height:500px){
+  #langBar{margin-bottom:2px !important}
+  #nameFirstInput{padding:6px 10px !important;font-size:12px !important}
+  #btnStart{padding:10px 0 !important;font-size:13px !important;margin-top:6px !important}
+}
+.tb{background:#0d0d22;color:#555;border:1px solid #222;padding:5px 12px;font-size:11px;font-family:'Courier New',monospace;cursor:pointer;border-radius:4px;transition:all .15s}
 .tb:hover,.tb.on{background:#ff4757;color:#fff;border-color:#ff4757}
-.panel{display:none;width:340px;text-align:center}
+.panel{display:none;width:min(320px,92vw);text-align:center}
 .panel.on{display:block}
-#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:13px 44px;font-size:15px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 24px #ff475766;margin-top:8px;transition:transform .1s}
+#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:14px 0;font-size:15px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:10px;transition:transform .1s;width:100%;max-width:260px;-webkit-tap-highlight-color:transparent}
 #btnStart:active{transform:scale(.97)}
 /* MOBILE */
 #mctrl{position:absolute;bottom:0;left:0;right:0;height:186px;z-index:5;pointer-events:none;display:none}
@@ -60,16 +69,6 @@ canvas{display:block}
 </style>
 </head>
 <body>
-<div id="nameOv">
-  <div id="nameBox">
-    <h1>OYUNCU ADI</h1>
-    <p>Skor tablosuna adınla girmek için ismini yaz.</p>
-    <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ">
-    <br>
-    <button id="btnNameContinue">DEVAM ET</button>
-    <div id="nameWarn"></div>
-  </div>
-</div>
 <div id="gc">
   <canvas id="c"></canvas>
   <div id="hud">
@@ -104,54 +103,121 @@ canvas{display:block}
     <div id="transText"></div>
   </div>
 
-  <div id="ov">
-    <canvas id="logo" width="420" height="160"></canvas>
-    <!-- Language selector — prominent, top of overlay -->
-    <div id="langBar" style="display:flex;gap:10px;margin-bottom:6px">
-      <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:8px 20px;font-family:'Courier New',monospace;font-size:13px;cursor:pointer;border-radius:6px;letter-spacing:1px;transition:all .15s">🇹🇷 TÜRKÇE</button>
-      <button id="btnEN" onclick="setLang('en')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:8px 20px;font-family:'Courier New',monospace;font-size:13px;cursor:pointer;border-radius:6px;letter-spacing:1px;transition:all .15s">🇬🇧 ENGLISH</button>
+  <!-- KARAKTER SEÇİM EKRANI -->
+<div id="charSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto">
+  <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;margin-bottom:6px;text-shadow:0 0 18px #ffd700">⚔ CHOOSE YOUR HERO ⚔</div>
+  <div style="color:#888;font-size:10px;letter-spacing:2px;margin-bottom:14px">SELECT YOUR FIGHTER</div>
+  <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:420px;width:100%"></div>
+  <div id="charDesc" style="margin-top:14px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:28px"></div>
+  <button id="btnCharStart" style="margin-top:12px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 36px;font-size:13px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755;display:none">▶ START</button>
+</div>
+
+<div id="ov">
+    <canvas id="logo" width="320" height="110" style="max-width:min(95vw,320px);max-height:min(110px,18vh);margin-bottom:4px"></canvas>
+    <div id="langBar" style="display:flex;gap:8px;margin-bottom:6px">
+      <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇹🇷 TR</button>
+      <button id="btnEN" onclick="setLang('en')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇬🇧 EN</button>
     </div>
-    <div id="goTitle" style="display:none;font-size:26px;color:#ff4757;font-weight:bold;letter-spacing:3px;margin-bottom:4px"></div>
-    <div id="goScore" style="display:none;font-size:13px;color:#aaa;margin-bottom:10px"></div>
-    <div style="display:flex;gap:7px;margin:8px 0 12px">
-      <button class="tb on" id="tbPlay">▶ OYNA</button>
-      <button class="tb" id="tbHi">🏆 EN İYİ</button>
-      <button class="tb" id="tbCred">ℹ KREDİLER</button>
+    <div id="goTitle" style="display:none;font-size:22px;color:#ff4757;font-weight:bold;letter-spacing:3px;margin-bottom:2px"></div>
+    <div id="goScore" style="display:none;font-size:12px;color:#aaa;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;margin:4px 0 8px">
+      <button class="tb on" id="tbHi">🏆 EN İYİ</button>
+      <button class="tb" id="tbCred">ℹ YAPIMCILAR</button>
     </div>
-    <div class="panel on" id="pPlay">
-      <div style="font-size:10px;color:#555;line-height:2;margin-bottom:12px">
-        ← → Hareket &nbsp;|&nbsp; <span style="color:#ffd700">SPACE</span> Mızrak ateşle<br>
-        ↑ / W Zıpla &nbsp;|&nbsp; Balon ipe değince hasar alır<br>
-        <span style="color:#a29bfe">Kanca bonusu</span> → Tavana yapışır → Balonu böler<br>
-        <span style="color:#ff9ff3">✌ Çiftli Atış</span> → Aynı anda 2 mızrak!<br>
-        Büyük → Orta → Küçük → YOK
-      </div>
-      <div id="activePlayerName" style="margin:8px 0;color:#74b9ff;font-size:11px;letter-spacing:1px;font-weight:bold"></div>
-      <button id="btnStart">▶ MACERAYA BAŞLA</button>
+    <div style="margin:6px 0 4px">
+      <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ" style="background:#0d0d22;color:#fff;border:1px solid #ff475766;padding:8px 12px;font-family:'Courier New',monospace;font-size:13px;border-radius:6px;width:180px;text-align:center;outline:none;letter-spacing:1px">
+      <div id="nameWarn" style="color:#ff4757;font-size:10px;margin-top:3px;min-height:14px"></div>
     </div>
+    <div id="activePlayerName" style="margin:2px 0;color:#74b9ff;font-size:10px;letter-spacing:1px;font-weight:bold"></div>
+    <button id="btnStart">▶ MACERAYA BAŞLA</button>
     <div class="panel" id="pHi">
-      <div style="color:#ffd700;font-size:12px;letter-spacing:2px;margin-bottom:10px">🏆 EN YÜKSEK SKORLAR</div>
-      <div id="hiList" style="font-size:12px;color:#ccc;line-height:2;text-align:left;min-height:50px"></div>
-      <button id="btnClear" style="margin-top:10px;background:#1a1a2e;color:#666;border:1px solid #333;padding:5px 14px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:3px">Sıfırla</button>
+      <div style="color:#ffd700;font-size:11px;letter-spacing:2px;margin-bottom:8px">🏆 EN YÜKSEK SKORLAR</div>
+      <div id="hiList" style="font-size:11px;color:#ccc;line-height:1.9;text-align:left;min-height:40px"></div>
+      <button id="btnClear" style="margin-top:8px;background:#1a1a2e;color:#666;border:1px solid #333;padding:5px 14px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:3px">Sıfırla</button>
     </div>
-    <div class="panel" id="pCred" style="font-size:11px;color:#888;line-height:2.2;text-align:center">
-      <div style="font-size:22px;margin-bottom:8px">🦸</div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px">GAME DESIGN</div>
-      <div style="color:#ddd">Mishatlg</div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px;margin-top:6px">PROGRAMMING</div>
-      <div style="color:#ddd">Claude Sonnet 4.5 — Anthropic<br><span style="color:#444;font-size:9px">AI-powered development</span></div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px;margin-top:6px">ANIMATIONS</div>
-      <div style="color:#ddd">Travis Michelson</div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px;margin-top:6px">SCENARIOS</div>
-      <div style="color:#ddd">Anton Rodochenkov</div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px;margin-top:6px">LIGHTS &amp; CATERING</div>
-      <div style="color:#ddd">Kseniya Ltd. Co.</div>
-      <div style="color:#ffd700;font-size:10px;letter-spacing:2px;margin-top:6px">EXECUTIVE PRODUCER</div>
-      <div style="color:#ddd">Misha Entertainment</div>
-      <div style="color:#333;font-size:10px;margin-top:14px">PANGOLIER v1.0 — 2026<br>© Misha Entertainment. All rights reserved.</div>
+    <div class="panel" id="pCred" style="overflow:hidden;height:180px;position:relative;width:min(320px,92vw);background:rgba(0,0,0,.3);border-radius:8px">
+      <!-- Üst ve alt fade maskeleri -->
+      <div style="position:absolute;top:0;left:0;right:0;height:28px;background:linear-gradient(to bottom,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(to top,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
+      <div id="credScroll" style="position:absolute;width:100%;text-align:center;font-family:'Courier New',monospace;top:180px">
+
+        <div style="color:#ffd700;font-size:15px;letter-spacing:4px;margin:8px 0 4px;text-shadow:0 0 12px #ffd700">✦ CREDITS ✦</div>
+        <div style="color:#555;font-size:9px;letter-spacing:2px;margin-bottom:16px">PANGOLIER v2.0 — 2026</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎮 GAME DESIGN & VISION</div>
+        <div style="color:#fff;font-size:12px;font-weight:bold">Mishatlg</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">💻 LEAD PROGRAMMING</div>
+        <div style="color:#fff;font-size:12px;font-weight:bold">Tolga&amp;Misha <span id="ylmzSpan"></span></div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 AI ENGINEERING & DARK ARTS</div>
+        <div style="color:#fff;font-size:12px">Claude Sonnet — Anthropic</div>
+        <div style="color:#555;font-size:9px;font-style:italic">"I just work here"</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎭 CHARACTER ANIMATION DIRECTOR</div>
+        <div style="color:#fff;font-size:12px">Travis Michelson</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Made the cape flutter for 3 weeks straight</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🌍 WORLD BUILDING & LORE MASTER</div>
+        <div style="color:#fff;font-size:12px">Zara Nightwood</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Visited 0 of the 13 locations</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎵 SOUNDTRACK COMPOSER & DJ</div>
+        <div style="color:#fff;font-size:12px">DJ Phantom Beats</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Plays triangle wave at parties</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎈 BALLOON PHYSICS CONSULTANT</div>
+        <div style="color:#fff;font-size:12px">Dr. Floaty McBounce</div>
+        <div style="color:#555;font-size:9px;font-style:italic">PhD in Applied Balloon Dynamics, MIT</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🪜 LADDER CLIMBING SPECIALIST</div>
+        <div style="color:#fff;font-size:12px">Igor Climbinski</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Still hasn't reached the top platform</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🗡️ SPEAR TRAJECTORY ENGINEER</div>
+        <div style="color:#fff;font-size:12px">Sir Lancealot III</div>
+        <div style="color:#555;font-size:9px;font-style:italic">The spear hits the ground. On purpose.</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🧪 CAPE AERODYNAMICS RESEARCHER</div>
+        <div style="color:#fff;font-size:12px">Prof. Windsworth Flap</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Spent 6 months on cape wave equations</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🕵️ NINJA CULTURAL ADVISOR</div>
+        <div style="color:#fff;font-size:12px">Anonymous</div>
+        <div style="color:#555;font-size:9px;font-style:italic">We don't know who he is. He prefers it that way.</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🏴‍☠️ PIRATE DIALECT CONSULTANT</div>
+        <div style="color:#fff;font-size:12px">Captain Yargh McGee</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Insisted on adding eye patch to robot too</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🧝 ELF EAR PROPORTIONS DIRECTOR</div>
+        <div style="color:#fff;font-size:12px">Elvina Longear</div>
+        <div style="color:#555;font-size:9px;font-style:italic">"They must be pointier. POINTIER."</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 ROBOT ANTENNA CALIBRATION</div>
+        <div style="color:#fff;font-size:12px">Unit-7 "Beepsworth"</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Self-employed. Literally.</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">⚖️ LEGAL & COMPLIANCE</div>
+        <div style="color:#fff;font-size:12px">Nobody Cares LLC</div>
+        <div style="color:#555;font-size:9px;font-style:italic">Terms & Conditions: ¯\_(ツ)_/¯</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">☕ OFFICIAL COFFEE SPONSOR</div>
+        <div style="color:#fff;font-size:12px">Black Bean Enterprises</div>
+        <div style="color:#555;font-size:9px;font-style:italic">4,200 cups consumed during development</div>
+
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎬 EXECUTIVE PRODUCER</div>
+        <div style="color:#fff;font-size:12px;font-weight:bold">Misha Entertainment</div>
+
+        <div style="color:#ffd700;font-size:11px;margin-top:20px;letter-spacing:1px">🎈 No balloons were harmed</div>
+        <div style="color:#ffd700;font-size:11px;letter-spacing:1px">in the making of this game.</div>
+        <div style="color:#555;font-size:9px;margin-top:4px;font-style:italic">(One was slightly deflated. We're sorry.)</div>
+
+        <div style="color:#333;font-size:9px;margin-top:20px">PANGOLIER v2.0 — 2026 © Misha Entertainment</div>
+        <div style="height:180px"></div>
+      </div>
     </div>
   </div>
-</div>
 <script>
 // ═══════════════════════════════════════════════════
 // CANVAS SETUP
@@ -188,7 +254,7 @@ const I18N={
     hiscore:'🏆 EN YÜKSEK SKORLAR',clear:'Sıfırla',
     controls:'← → Hareket | SPACE Mızrak ateşle\n↑/W Zıpla | Balon ipe değince hasar alır',
     gameOver:'OYUN BİTTİ',newRecord:'YENİ REKOR!',
-    play:'▶ OYNA',hi:'🏆 EN İYİ',cred:'ℹ KREDİLER',
+    play:'▶ OYNA',hi:'🏆 EN İYİ',cred:'ℹ YAPIMCILAR',
     noScore:'Henüz skor yok.',
   },
   en:{
@@ -200,7 +266,7 @@ const I18N={
     noScore:'No scores yet.',
   }
 };
-let lang=localStorage.getItem('panglang')||'tr';
+let lang=localStorage.getItem('panglang')||'en';
 function t(k){return(I18N[lang]||I18N.tr)[k]||k}
 function setLang(l){
   lang=l;localStorage.setItem('panglang',l);
@@ -211,7 +277,7 @@ function setLang(l){
   applyLang();
 }
 function applyLang(){
-  document.getElementById('tbPlay').textContent=t('play');
+  
   document.getElementById('tbHi').textContent=t('hi');
   document.getElementById('tbCred').textContent=t('cred');
   document.getElementById('btnStart').textContent=t('start');
@@ -222,6 +288,45 @@ function applyLang(){
 }
 // apply on load
 setTimeout(()=>setLang(lang),0);
+// Rainbow Ylmz
+function renderYlmz(){
+  const el=document.getElementById('ylmzSpan');
+  if(!el)return;
+  const cols=['#ff4757','#ffa502','#ffd700','#2ed573','#74b9ff','#a29bfe','#fd79a8'];
+  el.innerHTML='Ylmz'.split('').map((c,i)=>`<span style="color:${cols[i%cols.length]};font-weight:bold">${c}</span>`).join('');
+}
+setTimeout(renderYlmz,100);
+
+// Credits kaydırma animasyonu — alttan yukarı
+let credPos=180,credRaf=null,credActive=false;
+function startCredScroll(){
+  stopCredScroll();
+  credActive=true;
+  const el=document.getElementById('credScroll');
+  if(!el)return;
+  credPos=180;
+  el.style.top=credPos+'px';
+  function step(){
+    if(!credActive)return;
+    credPos-=0.55;
+    if(credPos<-el.scrollHeight) credPos=180;
+    el.style.top=Math.round(credPos)+'px';
+    credRaf=requestAnimationFrame(step);
+  }
+  credRaf=requestAnimationFrame(step);
+}
+function stopCredScroll(){
+  credActive=false;
+  if(credRaf){cancelAnimationFrame(credRaf);credRaf=null;}
+  const el=document.getElementById('credScroll');
+  if(el) el.style.top='180px';
+}
+setTimeout(()=>{
+  const tbHi=document.getElementById('tbHi');
+  const tbCred=document.getElementById('tbCred');
+  if(tbHi)  tbHi.addEventListener('click',stopCredScroll);
+  if(tbCred)tbCred.addEventListener('click',()=>setTimeout(startCredScroll,60));
+},300);
 
 
 function rgba(hex,a){
@@ -295,64 +400,56 @@ function drawPangolin(ctx2,cx,cy,frame){
 }
 
 function animLogo(){
-  lc.clearRect(0,0,420,160);
+  lc.clearRect(0,0,320,110);
   const lt=lf*.04;
 
   // ── Floating balloons ABOVE letters ──────────────
   const BDATA=[
-    {col:'#ff4757',s:'#c0392b',x:38, baseY:22,r:14,phase:0   },
-    {col:'#ffa502',s:'#c47400',x:90, baseY:18,r:12,phase:.8  },
-    {col:'#ffd700',s:'#c8a000',x:150,baseY:24,r:15,phase:1.4 },
-    {col:'#2ed573',s:'#1a8a45',x:210,baseY:16,r:13,phase:2.1 },
-    {col:'#74b9ff',s:'#0055aa',x:270,baseY:22,r:14,phase:2.7 },
-    {col:'#a29bfe',s:'#6c5ce7',x:325,baseY:18,r:12,phase:3.3 },
-    {col:'#fd79a8',s:'#c0547c',x:378,baseY:24,r:13,phase:3.9 },
+    {col:'#ff4757',s:'#c0392b',x:26, baseY:14,r:10,phase:0   },
+    {col:'#ffa502',s:'#c47400',x:60, baseY:12,r:9, phase:.8  },
+    {col:'#ffd700',s:'#c8a000',x:100,baseY:15,r:10,phase:1.4 },
+    {col:'#2ed573',s:'#1a8a45',x:145,baseY:10,r:9, phase:2.1 },
+    {col:'#74b9ff',s:'#0055aa',x:188,baseY:14,r:10,phase:2.7 },
+    {col:'#a29bfe',s:'#6c5ce7',x:228,baseY:12,r:9, phase:3.3 },
+    {col:'#fd79a8',s:'#c0547c',x:268,baseY:14,r:9, phase:3.9 },
   ];
   BDATA.forEach(b=>{
-    const by=b.baseY+Math.sin(lt+b.phase)*5;
-    // shadow
-    lc.fillStyle='rgba(0,0,0,.15)';
-    lc.beginPath();lc.ellipse(b.x,50,b.r*.55,4,0,0,Math.PI*2);lc.fill();
-    // body gradient
+    const by=b.baseY+Math.sin(lt+b.phase)*3.5;
+    lc.fillStyle='rgba(0,0,0,.12)';
+    lc.beginPath();lc.ellipse(b.x,36,b.r*.5,3,0,0,Math.PI*2);lc.fill();
     const bg=lc.createRadialGradient(b.x-b.r*.3,by-b.r*.3,b.r*.1,b.x,by,b.r);
     bg.addColorStop(0,'#fff');bg.addColorStop(.25,b.col);bg.addColorStop(1,b.s);
-    lc.fillStyle=bg;
-    lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.fill();
-    // stroke
-    lc.strokeStyle=b.s;lc.lineWidth=1.5;
-    lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.stroke();
-    // shine
-    lc.fillStyle='rgba(255,255,255,.38)';
-    lc.beginPath();lc.ellipse(b.x-b.r*.3,by-b.r*.3,b.r*.25,b.r*.15,-.5,0,Math.PI*2);lc.fill();
-    // knot
-    lc.fillStyle=b.s;lc.beginPath();lc.arc(b.x,by+b.r,3,0,Math.PI*2);lc.fill();
-    // string to letter row
-    lc.strokeStyle=b.s+'88';lc.lineWidth=1;
-    lc.beginPath();lc.moveTo(b.x,by+b.r+3);lc.lineTo(b.x,58);lc.stroke();
+    lc.fillStyle=bg;lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.fill();
+    lc.strokeStyle=b.s;lc.lineWidth=1.2;lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.stroke();
+    lc.fillStyle='rgba(255,255,255,.35)';lc.beginPath();lc.ellipse(b.x-b.r*.3,by-b.r*.3,b.r*.22,b.r*.13,-.5,0,Math.PI*2);lc.fill();
+    lc.fillStyle=b.s;lc.beginPath();lc.arc(b.x,by+b.r,2,0,Math.PI*2);lc.fill();
+    lc.strokeStyle=b.s+'88';lc.lineWidth=.8;
+    lc.beginPath();lc.moveTo(b.x,by+b.r+2);lc.lineTo(b.x,38);lc.stroke();
   });
 
-  // ── PANGOLIER letters ────────────────────────────
-  const sx2=12,sp=45;
+  // ── PANGOLIER letters ─────────────────────────────
+  const sx2=8,sp=34;
   for(let i=0;i<9;i++){
-    const x=sx2+i*sp+18, y=72+Math.sin(lt+i*1.1)*5;
-    lc.shadowColor=LC[i];lc.shadowBlur=14+Math.sin(lt+i)*4;
+    const x=sx2+i*sp+14, y=54+Math.sin(lt+i*1.1)*3.5;
+    lc.shadowColor=LC[i];lc.shadowBlur=10+Math.sin(lt+i)*3;
     lc.fillStyle=LC[i];
-    // P (i=0) and R (i=8) are 4x bigger
     const isBig=(i===0||i===8);
-    const baseSize=isBig?130:34;
-    const yOff=isBig?-28:0; // big letters sit lower to align baseline
-    lc.font=`bold ${baseSize+Math.sin(lt+i*.9)*3}px 'Courier New'`;
+    const baseSize=isBig?88:24;
+    const yOff=isBig?-18:0;
+    lc.font=`bold ${baseSize+Math.sin(lt+i*.9)*2}px 'Courier New'`;
     lc.textAlign='center';lc.textBaseline='middle';
     lc.fillText(LL[i],x,y+yOff);
   }
   lc.shadowBlur=0;
 
-  // ── Pangolin below letters ────────────────────────
-  drawPangolin(lc,210,120,lf);
+  // ── tiny pangolin below ───────────────────────────
+  lc.save();lc.scale(.55,.55);
+  drawPangolin(lc,290,158,lf);
+  lc.restore();
 
   // tagline
-  lc.fillStyle='#555';lc.font='9px Courier New';lc.textAlign='center';
-  lc.fillText(lang==='tr'?'Zırhlı Balon Avcısı':'The Armored Balloon Hunter',210,152);
+  lc.fillStyle='#444';lc.font='8px Courier New';lc.textAlign='center';
+  lc.fillText(lang==='tr'?'Zırhlı Balon Avcısı':'The Armored Balloon Hunter',155,100);
 
   lf++;lRaf=requestAnimationFrame(animLogo);
 }
@@ -362,13 +459,12 @@ animLogo();
 // TABS
 // ═══════════════════════════════════════════════════
 function switchTab(n){
-  ['Play','Hi','Cred'].forEach(tab=>{
+  ['Hi','Cred'].forEach(tab=>{
     document.getElementById('tb'+tab).classList.toggle('on',tab===n);
     document.getElementById('p'+tab).classList.toggle('on',tab===n);
   });
   if(n==='Hi')renderHi();
 }
-document.getElementById('tbPlay').onclick=()=>switchTab('Play');
 document.getElementById('tbHi').onclick=()=>switchTab('Hi');
 document.getElementById('tbCred').onclick=()=>switchTab('Cred');
 
@@ -399,35 +495,21 @@ function renderHi(){
 }
 document.getElementById('btnClear').onclick=()=>{try{localStorage.removeItem(HS)}catch{}renderHi()};
 
+function showNameOv(){}
+function hideNameOv(){}
 function refreshActivePlayerLabel(){
+  const inp=document.getElementById('nameFirstInput');
   const el=document.getElementById('activePlayerName');
-  if(el)el.textContent='OYUNCU: '+cleanPlayerName(playerName);
+  if(inp&&playerName&&playerName!=='PLAYER'){
+    inp.value=playerName;
+    if(el)el.textContent='HOŞ GELDİN, '+playerName;
+  }
 }
 function setupNameFirstScreen(){
-  const ov=document.getElementById('nameOv');
   const inp=document.getElementById('nameFirstInput');
-  const btn=document.getElementById('btnNameContinue');
-  const warn=document.getElementById('nameWarn');
-  if(!ov||!inp||!btn)return;
-
-  inp.value=playerName&&playerName!=='PLAYER'?playerName:'';
-
-  function acceptName(){
-    const raw=String(inp.value||'').trim();
-    if(!raw){
-      warn.textContent='Lütfen oyuncu adı gir.';
-      inp.focus();
-      return;
-    }
-    playerName=cleanPlayerName(raw);
-    try{localStorage.setItem('pangPlayerName',playerName)}catch{}
-    ov.style.display='none';
-    refreshActivePlayerLabel();
-  }
-
-  btn.onclick=acceptName;
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')acceptName()});
-  setTimeout(()=>inp.focus(),120);
+  if(!inp)return;
+  try{const s=localStorage.getItem('pangPlayerName');if(s){playerName=cleanPlayerName(s);}}catch{}
+  refreshActivePlayerLabel();
 }
 setTimeout(setupNameFirstScreen,0);
 
@@ -502,27 +584,208 @@ const SFX={
   bomb:()=>{noise(.4,.3);osc(60,'sawtooth',.3,.2)},
 };
 
-// BGM
-let bgmOn=false,bgmTimeout=null;
-const MELODY=[
-  [523,.18],[523,.18],[659,.18],[784,.36],[659,.18],[523,.18],
-  [440,.18],[440,.18],[523,.18],[659,.36],[523,.36],
-  [392,.18],[523,.18],[659,.18],[784,.18],[880,.36],
-  [784,.18],[659,.18],[523,.18],[440,.18],[392,.54],
+// ═══════════════════════════════════════════════════
+// BGM — Her dünya için farklı tema
+// ═══════════════════════════════════════════════════
+let bgmOn=false,bgmTimeout=null,bgmWorldIdx=0;
+
+// Her dünyaya özgü müzik: [melody, bass, style]
+// melody: [[freq,dur],...] bass: [f,d,f,d,...]
+// style: {mel_type, bass_type, mel_vol, bass_vol, tempo}
+const WORLD_BGM=[
+  // 0. İstanbul — Üsküdara Giderken (MIDI'den alındı, 100 BPM)
+  {mel:[
+    [293.66,0.45],[440.0,0.15],[440.0,0.3],[440.0,0.3],[466.16,0.15],[440.0,0.15],
+    [466.16,0.15],[523.25,0.15],[440.0,0.3],[440.0,0.3],[392.0,0.3],[392.0,0.15],
+    [392.0,0.15],[349.23,0.3],[392.0,0.3],[440.0,1.2],[293.66,0.45],[440.0,0.15],
+    [440.0,0.3],[440.0,0.3],[466.16,0.15],[440.0,0.15],[466.16,0.15],[523.25,0.15],
+    [440.0,0.3],[440.0,0.3],[392.0,0.3],[392.0,0.15],[392.0,0.15],[349.23,0.3],[392.0,0.3],
+    [440.0,1.2],[293.66,0.45],[329.63,0.15],[349.23,0.3],[392.0,0.3],[440.0,0.15],
+    [466.16,0.15],[440.0,0.15],[392.0,0.15],[349.23,0.15],[329.63,0.15],[293.66,0.3],
+    [392.0,0.15],[349.23,0.15],[349.23,0.15],[329.63,0.15],[329.63,0.15],[293.66,0.15],
+    [293.66,0.15],[277.18,0.15],[329.63,1.2],[293.66,0.45],[329.63,0.15],[349.23,0.3],
+    [392.0,0.3],[440.0,0.15],[466.16,0.15],[440.0,0.15],[392.0,0.15],[349.23,0.15],
+    [329.63,0.15],[293.66,0.3],[392.0,0.15],[349.23,0.15],[349.23,0.15],[329.63,0.15],
+    [329.63,0.15],[293.66,0.15],[293.66,0.15],[277.18,0.15],[293.66,1.2]
+  ],
+   bass:[
+     146.83,0.6, 146.83,0.6, 164.81,0.6, 146.83,1.2,
+     123.47,0.6, 123.47,0.6, 146.83,0.6, 123.47,1.2,
+     146.83,0.6, 146.83,0.6, 164.81,0.6, 146.83,1.2,
+     110.0,0.6,  123.47,0.6, 146.83,0.6, 110.0,1.2
+   ],
+   mt:'triangle',bt:'sine',mv:.055,bv:.03,
+   drum:false},
+
+  // 1. Kahire — Horror piramit, minor, drone
+  {mel:[[220,.18],[233,.18],[220,.36],[196,.18],[185,.18],[196,.36],
+        [220,.18],[207,.18],[196,.18],[185,.36],[196,.54]],
+   bass:[55,.36,55,.36,58,.36,55,.72, 49,.36,49,.36,52,.36,49,.72],
+   mt:'sawtooth',bt:'sawtooth',mv:.05,bv:.04,
+   drone:196, drum:true},
+
+  // 2. Tokyo — Metal / anime action, hızlı square
+  {mel:[[880,.09],[880,.09],[988,.09],[880,.18],[784,.09],[880,.09],[988,.18],[1047,.09],[988,.09],
+        [880,.09],[880,.09],[784,.09],[698,.18],[784,.09],[698,.09],[659,.36]],
+   bass:[110,.18,110,.18,123,.18,110,.36, 98,.18,98,.18,110,.18,98,.36],
+   mt:'square',bt:'square',mv:.04,bv:.035,
+   drum:true},
+
+  // 3. Antartika — Alien/horror, sine eerie, yavaş
+  {mel:[[311,.24],[329,.24],[311,.48],[277,.24],[293,.24],[277,.72],
+        [311,.24],[370,.24],[349,.24],[329,.48],[311,.72]],
+   bass:[78,.48,78,.48,82,.48,78,.96],
+   mt:'sine',bt:'sine',mv:.06,bv:.035,
+   drone:155},
+
+  // 4. Amerika — Rock/action, distorted sawtooth
+  {mel:[[440,.12],[440,.12],[494,.12],[523,.24],[440,.12],[392,.12],[440,.36],
+        [349,.12],[392,.12],[440,.12],[494,.24],[523,.12],[587,.12],[523,.36]],
+   bass:[110,.24,110,.24,130,.24,110,.48, 87,.24,87,.24,98,.24,87,.48],
+   mt:'sawtooth',bt:'sawtooth',mv:.05,bv:.04,
+   drum:true},
+
+  // 5. Rusya — Dark march, low brass feel
+  {mel:[[196,.24],[196,.24],[220,.12],[196,.12],[175,.48],[196,.24],
+        [233,.24],[220,.24],[196,.48],[175,.24],[165,.24],[175,.72]],
+   bass:[49,.48,49,.24,55,.24,49,.48, 41,.48,41,.24,44,.24,41,.96],
+   mt:'sawtooth',bt:'square',mv:.052,bv:.042,
+   drum:true},
+
+  // 6. Dominikana — Tropical + dark, hızlı latin
+  {mel:[[523,.09],[587,.09],[659,.18],[698,.09],[659,.09],[587,.09],[523,.18],
+        [440,.09],[494,.09],[523,.18],[587,.09],[523,.09],[494,.09],[440,.36]],
+   bass:[130,.18,130,.18,146,.18,130,.36, 110,.18,110,.18,123,.18,110,.36],
+   mt:'triangle',bt:'square',mv:.045,bv:.03,
+   drum:true},
+
+  // 7. Bakü — Metal / ateş teması, heavy riff
+  {mel:[[233,.12],[233,.12],[261,.12],[233,.12],[207,.12],[196,.12],[207,.24],[233,.36],
+        [175,.12],[196,.12],[207,.12],[196,.12],[175,.12],[165,.12],[175,.36]],
+   bass:[58,.24,58,.12,58,.12,65,.24,58,.24, 49,.24,49,.12,49,.12,52,.24,49,.48],
+   mt:'sawtooth',bt:'sawtooth',mv:.055,bv:.045,
+   drum:true},
+
+  // 8. Barselona — Flamenco horror, minor Phrygian
+  {mel:[[329,.15],[311,.15],[293,.15],[311,.30],[349,.15],[329,.15],[293,.45],
+        [261,.15],[277,.15],[293,.15],[311,.30],[293,.15],[261,.15],[246,.60]],
+   bass:[82,.30,87,.15,82,.15,78,.60, 73,.30,78,.15,73,.15,69,.60],
+   mt:'triangle',bt:'square',mv:.048,bv:.032},
+
+  // 9. Roma — Epic gladiator march
+  {mel:[[392,.18],[392,.18],[440,.18],[392,.18],[349,.36],[329,.18],[349,.36],
+        [392,.18],[440,.18],[494,.18],[523,.36],[494,.18],[440,.18],[392,.54]],
+   bass:[98,.36,98,.36,110,.36,98,.72, 87,.36,87,.36,98,.36,87,.72],
+   mt:'sawtooth',bt:'square',mv:.05,bv:.04,
+   drum:true},
+
+  // 10. Paris — Dark gothic waltz (3/4)
+  {mel:[[659,.18],[622,.18],[659,.18],[698,.54],[659,.18],[622,.18],[587,.54],
+        [622,.18],[587,.18],[554,.18],[523,.54],[494,.18],[523,.18],[554,.18],[523,.54]],
+   bass:[164,.54,164,.27,174,.27,164,.54, 155,.54,155,.27,164,.27,155,.54],
+   mt:'triangle',bt:'sine',mv:.045,bv:.03},
+
+  // 11. Afrika — Tribal horror drums + melody
+  {mel:[[440,.12],[415,.12],[440,.24],[392,.12],[370,.12],[392,.36],
+        [440,.12],[494,.12],[523,.12],[494,.12],[440,.12],[392,.24],[370,.48]],
+   bass:[110,.24,110,.12,116,.12,110,.24, 98,.24,98,.12,103,.12,98,.48],
+   mt:'sawtooth',bt:'square',mv:.05,bv:.038,
+   drum:true},
+
+  // 12. Uzay — Final boss, full metal chaos
+  {mel:[[880,.09],[932,.09],[880,.09],[830,.09],[880,.18],[784,.09],[698,.09],[784,.18],
+        [880,.09],[988,.09],[1047,.09],[988,.09],[880,.09],[784,.09],[698,.09],[659,.36]],
+   bass:[110,.18,116,.09,110,.09,103,.18,110,.18, 87,.18,92,.09,87,.09,82,.18,87,.36],
+   mt:'sawtooth',bt:'sawtooth',mv:.055,bv:.045,
+   drone:55, drum:true},
 ];
-const BASS=[130,.36,130,.36,165,.36,196,.36,165,.36,130,.72];
+
+function playDrumBeat(delay){
+  if(!AC||!masterGain)return;
+  // Kick
+  try{
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';o.frequency.setValueAtTime(150,AC.currentTime+delay);
+    o.frequency.exponentialRampToValueAtTime(40,AC.currentTime+delay+.08);
+    o.connect(g);g.connect(masterGain);
+    g.gain.setValueAtTime(.18,AC.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+delay+.12);
+    o.start(AC.currentTime+delay);o.stop(AC.currentTime+delay+.15);
+  }catch{}
+  // Snare (noise burst)
+  try{
+    const buf=AC.createBuffer(1,AC.sampleRate*.08,AC.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const s=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();
+    f.type='bandpass';f.frequency.value=2000;f.Q.value=0.8;
+    s.buffer=buf;s.connect(f);f.connect(g);g.connect(masterGain);
+    g.gain.setValueAtTime(.06,AC.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+delay+.08);
+    s.start(AC.currentTime+delay);
+  }catch{}
+}
+
 function scheduleBGM(){
   if(!AC||!masterGain||!bgmOn)return;
-  const vol=.055,bvol=.035;
+  const th=WORLD_BGM[bgmWorldIdx%WORLD_BGM.length];
+  const {mel,bass,mt,bt,mv,bv,drone,drum}=th;
+  const beat=.12; // tempo base
+
   let t=AC.currentTime+.05;
-  MELODY.forEach(([f,d])=>{osc(f,'triangle',d*.85,vol,t-AC.currentTime);t+=d});
-  let bt=AC.currentTime+.05;
-  for(let i=0;i<BASS.length;i+=2){osc(BASS[i],'square',BASS[i+1]*.85,bvol,bt-AC.currentTime);bt+=BASS[i+1]}
-  const total=MELODY.reduce((s,[,d])=>s+d,0)*1000;
-  bgmTimeout=setTimeout(scheduleBGM,total);
+
+  // Drone (horror bass pad)
+  if(drone){
+    try{
+      const total=mel.reduce((s,[,d])=>s+d,0);
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type='sine';o.frequency.value=drone;
+      o.connect(g);g.connect(masterGain);
+      g.gain.setValueAtTime(.028,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+total+.1);
+      o.start(t);o.stop(t+total+.2);
+    }catch{}
+  }
+
+  // Melody
+  mel.forEach(([f,d])=>{
+    osc(f,mt,d*.88,mv,t-AC.currentTime);
+    // Harmony (+5th) subtle
+    osc(f*1.5,mt,d*.88,mv*.22,t-AC.currentTime);
+    t+=d;
+  });
+
+  // Bass
+  let bt2=AC.currentTime+.05;
+  for(let i=0;i<bass.length;i+=2){
+    osc(bass[i],bt,bass[i+1]*.88,bv,bt2-AC.currentTime);
+    bt2+=bass[i+1];
+  }
+
+  // Drums
+  if(drum){
+    const total=mel.reduce((s,[,d])=>s+d,0);
+    const step=total/8;
+    // kick on 1 and 3, snare on 2 and 4
+    [0,2,4,6].forEach(i=>playDrumBeat(i*step+.05));       // kicks
+    [1,3,5,7].forEach(i=>playDrumBeat(i*step+.05+step*.5)); // snares (half-beat offset)
+  }
+
+  const total=mel.reduce((s,[,d])=>s+d,0)*1000;
+  bgmTimeout=setTimeout(scheduleBGM,total-80);
 }
-function startBGM(){if(bgmOn)return;bgmOn=true;scheduleBGM()}
+
+function startBGM(worldIdx){
+  bgmWorldIdx=worldIdx||0;
+  if(bgmOn)stopBGM();
+  bgmOn=true;
+  scheduleBGM();
+}
 function stopBGM(){bgmOn=false;if(bgmTimeout)clearTimeout(bgmTimeout);bgmTimeout=null}
+function setBGMWorld(wi){
+  if(bgmWorldIdx===wi)return;
+  bgmWorldIdx=wi;
+  if(bgmOn){stopBGM();bgmOn=true;scheduleBGM();}
+}
 
 // ═══════════════════════════════════════════════════
 // WORLD DATA
@@ -735,6 +998,270 @@ const BONUSES=[
 ];
 function rndBonus(){let c=0;const r=Math.random();for(const b of BONUSES){c+=b.r;if(r<c)return b}return BONUSES[0]}
 
+
+// ═══════════════════════════════════════════════════
+// KARAKTER TANIMLARI
+// ═══════════════════════════════════════════════════
+const CHAR_DEFS = [
+  {
+    id:'knight',
+    name:'KNIGHT',
+    desc:'Armored crusader. Heavy but unstoppable.',
+    emoji:'🗡️',
+    shirt1:'#c0c8d8', shirt2:'#8090a8', shirt3:'#505868', // gümüş zırh
+    pants:'#4a3820', pants2:'#6a5030',
+    hair:'#c0a030', hair2:'#8a7020',       // altın miğfer
+    skin:'#f5cba0', skin2:'#dba870',
+    cape1:'#c0392b', cape2:'#8a1a10', cape3:'#4a0808', // kırmızı pelerin
+    shoe1:'#707890', shoe2:'#505060',
+    sleeve1:'#9090a8', sleeve2:'#606070',
+    beltCol:'#8a6020', beltBuckle:'#ffd700',
+    special:'helmet',  // miğfer çizer
+  },
+  {
+    id:'wizard',
+    name:'WIZARD',
+    desc:'Master of arcane arts. Slow but powerful.',
+    emoji:'🧙',
+    shirt1:'#6030a0', shirt2:'#401880', shirt3:'#200840',
+    pants:'#2a1060', pants2:'#3a1880',
+    hair:'#e0e0e0', hair2:'#b0b0b0',
+    skin:'#f0d0b0', skin2:'#d0a888',
+    cape1:'#4020c0', cape2:'#2810a0', cape3:'#100850',
+    shoe1:'#301060', shoe2:'#200840',
+    sleeve1:'#5828a0', sleeve2:'#381878',
+    beltCol:'#ffd700', beltBuckle:'#fff8c0',
+    special:'staff',
+  },
+  {
+    id:'ninja',
+    name:'NINJA',
+    desc:'Swift shadow warrior. Lightning fast.',
+    emoji:'🥷',
+    shirt1:'#1a1a1a', shirt2:'#111111', shirt3:'#080808',
+    pants:'#141414', pants2:'#1c1c1c',
+    hair:'#0a0a0a', hair2:'#111111',
+    skin:'#181818', skin2:'#202020',  // yüz maskeli
+    cape1:'#1a1a2a', cape2:'#101018', cape3:'#080810',
+    shoe1:'#101010', shoe2:'#080808',
+    sleeve1:'#141414', sleeve2:'#0c0c0c',
+    beltCol:'#c0392b', beltBuckle:'#ff4757',
+    special:'mask',
+    eyeCol:'#ff4757',  // kırmızı gözler
+  },
+  {
+    id:'pirate',
+    name:'PIRATE',
+    desc:'Scourge of the seven seas. Bold and reckless.',
+    emoji:'🏴‍☠️',
+    shirt1:'#c04020', shirt2:'#8a2810', shirt3:'#501808',
+    pants:'#1a1a2a', pants2:'#282840',
+    hair:'#1a0a00', hair2:'#2a1000',
+    skin:'#e8b888', skin2:'#c89060',
+    cape1:'#8a1010', cape2:'#601010', cape3:'#380808',
+    shoe1:'#2a1800', shoe2:'#1a1000',
+    sleeve1:'#a03818', sleeve2:'#702808',
+    beltCol:'#c8a020', beltBuckle:'#ffd700',
+    special:'hat',
+    eyePatch:true,
+  },
+  {
+    id:'robot',
+    name:'ROBOT',
+    desc:'Mechanical warrior. Precise and relentless.',
+    emoji:'🤖',
+    shirt1:'#607090', shirt2:'#405070', shirt3:'#283848',
+    pants:'#304050', pants2:'#405060',
+    hair:'#808090', hair2:'#909090',
+    skin:'#788898', skin2:'#607080',
+    cape1:'#2050a0', cape2:'#103080', cape3:'#082060',
+    shoe1:'#485868', shoe2:'#384858',
+    sleeve1:'#506880', sleeve2:'#384858',
+    beltCol:'#2080ff', beltBuckle:'#60c0ff',
+    special:'antenna',
+    eyeCol:'#00e5ff',
+  },
+  {
+    id:'elf',
+    name:'ELF ARCHER',
+    desc:'Swift forest guardian. Graceful and deadly.',
+    emoji:'🧝',
+    shirt1:'#2a6820', shirt2:'#1a4810', shirt3:'#0a2808',
+    pants:'#3a5820', pants2:'#4a6828',
+    hair:'#d0c090', hair2:'#b0a060',
+    skin:'#f0e0c0', skin2:'#d8c0a0',
+    cape1:'#1a5810', cape2:'#104008', cape3:'#082804',
+    shoe1:'#4a3010', shoe2:'#302010',
+    sleeve1:'#2a5818', sleeve2:'#1a3810',
+    beltCol:'#8a6020', beltBuckle:'#c8a030',
+    special:'ears',
+  },
+];
+
+let selectedChar = CHAR_DEFS[0]; // varsayılan
+function getCH(){ return selectedChar||CHAR_DEFS[0]; }
+
+function buildCharSelect(){
+  const grid = document.getElementById('charGrid');
+  const desc = document.getElementById('charDesc');
+  const btnStart = document.getElementById('btnCharStart');
+  grid.innerHTML = '';
+
+  CHAR_DEFS.forEach((ch, i) => {
+    const card = document.createElement('div');
+    card.style.cssText = `background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.12);
+      border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;
+      display:flex;flex-direction:column;align-items:center;gap:4px;`;
+    card.innerHTML = `
+      <canvas width="80" height="80" id="charPrev${i}" style="border-radius:6px;background:rgba(0,0,0,.3)"></canvas>
+      <div style="color:#ffd700;font-size:9px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace">${ch.name}</div>
+    `;
+    card.onclick = () => {
+      selectedChar = ch;
+      desc.textContent = ch.desc;
+      btnStart.style.display = 'block';
+      // highlight
+      grid.querySelectorAll('div').forEach(c => c.style.borderColor='rgba(255,255,255,.12)');
+      card.style.borderColor = '#ffd700';
+      card.style.background = 'rgba(255,215,0,.12)';
+    };
+    card.onmouseenter = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.10)'; } };
+    card.onmouseleave = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.05)'; } };
+    grid.appendChild(card);
+
+    // karakter önizlemesi çiz
+    setTimeout(() => drawCharPreview(i, ch), 50);
+  });
+
+  // ilk kartı seç
+  grid.children[0] && grid.children[0].click();
+
+  document.getElementById('btnCharStart').onclick = startWithChar;
+}
+
+function drawCharPreview(i, ch){
+  const cvs = document.getElementById('charPrev'+i);
+  if(!cvs) return;
+  const c = cvs.getContext('2d');
+  c.clearRect(0,0,80,80);
+  c.save();
+  c.translate(40, 68);
+  c.scale(0.38, 0.38);
+
+  // Mini karakter çiz — gövde + baş + pelerin
+  // PELERIN
+  const cG = c.createLinearGradient(-18,-60,10,10);
+  cG.addColorStop(0, ch.cape1); cG.addColorStop(.5, ch.cape2); cG.addColorStop(1, ch.cape3);
+  c.fillStyle = cG;
+  c.beginPath();
+  c.moveTo(-8,-60);
+  c.quadraticCurveTo(-20,-30,-22,0);
+  c.quadraticCurveTo(-10,12,2,8);
+  c.quadraticCurveTo(10,-10,10,-60);
+  c.fill();
+
+  // GÖVDE
+  const sG = c.createRadialGradient(2,-30,2,2,-28,22);
+  sG.addColorStop(0, ch.shirt1); sG.addColorStop(.5, ch.shirt2); sG.addColorStop(1, ch.shirt3);
+  c.fillStyle = sG;
+  c.beginPath();
+  c.moveTo(-10,-8);c.lineTo(-12,-48);
+  c.quadraticCurveTo(-8,-54,2,-54);
+  c.quadraticCurveTo(12,-54,16,-50);
+  c.lineTo(14,-8);
+  c.quadraticCurveTo(2,-4,-10,-8);
+  c.fill();
+
+  // PANTOLON
+  c.fillStyle = ch.pants;
+  c.beginPath(); c.roundRect(-10,-16,24,12,3); c.fill();
+
+  // KEMER
+  c.fillStyle = ch.beltCol;
+  c.beginPath(); c.roundRect(-10,-16,24,5,2); c.fill();
+  c.fillStyle = ch.beltBuckle;
+  c.beginPath(); c.roundRect(2,-15,8,6,1); c.fill();
+
+  // BAŞ
+  if(ch.special==='helmet'){
+    // miğfer
+    c.fillStyle = ch.hair;
+    c.beginPath(); c.ellipse(2,-68,14,10,0,Math.PI,0); c.fill();
+    c.fillStyle = ch.hair2;
+    c.beginPath(); c.rect(-14,-68,28,6); c.fill();
+  } else if(ch.special==='mask'){
+    const hG2 = c.createRadialGradient(2,-66,2,2,-64,14);
+    hG2.addColorStop(0,'#202020'); hG2.addColorStop(1,'#101010');
+    c.fillStyle = hG2;
+    c.beginPath(); c.ellipse(2,-64,13,15,0,0,Math.PI*2); c.fill();
+    // kırmızı gözler
+    c.fillStyle = ch.eyeCol||'#ff4757';
+    c.beginPath(); c.ellipse(-4,-64,3,2,0,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse(8,-64,3,2,0,0,Math.PI*2); c.fill();
+  } else {
+    // Normal yüz
+    const fG = c.createRadialGradient(4,-62,2,2,-60,14);
+    fG.addColorStop(0,ch.skin); fG.addColorStop(.6,ch.skin); fG.addColorStop(1,ch.skin2);
+    c.fillStyle = fG;
+    c.beginPath(); c.ellipse(2,-63,12,14,0,0,Math.PI*2); c.fill();
+    // Saç
+    c.fillStyle = ch.hair;
+    c.beginPath();
+    c.ellipse(2,-74,11,7,0,Math.PI,0); c.fill();
+    c.fillStyle = ch.hair2;
+    c.beginPath(); c.ellipse(-6,-68,4,6,-.3,0,Math.PI*2); c.fill();
+    // Göz
+    c.fillStyle = ch.eyeCol||'#1a3080';
+    c.beginPath(); c.ellipse(8,-62,4,3,0,0,Math.PI*2); c.fill();
+    c.fillStyle='#fff'; c.beginPath(); c.ellipse(9,-63,1.5,1.5,0,0,Math.PI*2); c.fill();
+    // Kulak
+    if(ch.special==='ears'){
+      c.fillStyle = ch.skin;
+      c.beginPath(); c.ellipse(-10,-66,4,8,-.4,0,Math.PI*2); c.fill();
+      c.beginPath(); c.ellipse(14,-66,4,8,.4,0,Math.PI*2); c.fill();
+    }
+  }
+
+  // Özel aksesuarlar
+  if(ch.special==='antenna'){
+    c.strokeStyle='#60c0ff'; c.lineWidth=2; c.lineCap='round';
+    c.beginPath(); c.moveTo(2,-78); c.lineTo(2,-90); c.stroke();
+    c.fillStyle='#00e5ff';
+    c.beginPath(); c.arc(2,-90,3,0,Math.PI*2); c.fill();
+  }
+  if(ch.special==='hat'){
+    c.fillStyle='#1a1a2a';
+    c.beginPath(); c.roundRect(-16,-72,32,6,2); c.fill();
+    c.beginPath(); c.roundRect(-10,-96,22,28,3); c.fill();
+    c.fillStyle='#c8a020';
+    c.beginPath(); c.roundRect(-16,-68,32,4,1); c.fill();
+  }
+
+  c.restore();
+}
+
+function showCharSelect(){
+  const ov = document.getElementById('charSelectOv');
+  ov.style.display = 'flex';
+  buildCharSelect();
+}
+
+function hideCharSelect(){
+  document.getElementById('charSelectOv').style.display = 'none';
+}
+
+function startWithChar(){
+  hideCharSelect();
+  hideMenu(); resumeAC();
+  const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  document.getElementById('mctrl').style.display=isTouch?'block':'none';
+  initGame(); startBGM(0);
+  const w=WORLDS[0];
+  showMap(null,w,lang==='tr'?'İstanbul\'dan başlıyoruz! 🗺️':'Starting in Istanbul! 🗺️',()=>{
+    showTransition(w,()=>{running=true;rafGame=requestAnimationFrame(loop)});
+  });
+}
+
 // ═══════════════════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════════════════
@@ -843,11 +1370,16 @@ class Player{
   requestJump(){
     if(!running||this.jumpPrepT>0)return;
 
-    // If standing on a ladder, jump away from it instead of feeling stuck.
+    // Merdivenden zıplama: climbing veya ladder üzerindeyken her zaman izin ver
     if(this.climbing||this.onLadder){
       this.climbing=false;
       this.onLadder=false;
       this.onGround=false;
+      // Yatay yön varsa momentum ver — platforma geçebilsin
+      const left=keys.ArrowLeft||keys.a;
+      const right=keys.ArrowRight||keys.d;
+      if(left)  this.vx=-this.spd*1.1;
+      else if(right) this.vx= this.spd*1.1;
       this.launchJump();
       resumeAC();
       SFX.jump();
@@ -920,37 +1452,47 @@ class Player{
 
     const upKey=keys.ArrowUp||keys.w;
     const downKey=keys.ArrowDown||keys.s;
-    const ladder=getLadderAt(this.x,this.y+32);
-    const wantClimb=ladder&&(upKey||downKey||this.climbing);
+
+    const footY = this.y+44;
+    const nearLadder = getLadderAt(this.x, footY);
+
+    // Merdivene girme: yerde + ↑/↓ tuşuyla başlar.
+    // Zıplarken (vy!=0 ve onGround=false) merdiveni yeniden KAPMAZ.
+    const isAirborne = !this.onGround && !this.climbing;
+    const canStart = nearLadder && !isAirborne && (footY >= nearLadder.topY - 8) && (upKey||downKey);
+    const wantClimb = nearLadder && (this.climbing || canStart);
 
     if(wantClimb){
-      // Ladder movement: align to ladder, move up/down, no gravity while climbing.
       this.climbing=true;
       this.onLadder=true;
       this.onGround=false;
       this.vy=0;
-      this.x+=(ladder.cx-this.x)*.22;
-      if(upKey&&!downKey){this.y-=2.55;this.climbPhase+=.22;}
-      else if(downKey&&!upKey){this.y+=2.55;this.climbPhase-=.22;}
-      else this.y+=Math.sin(Date.now()*.008)*.08;
+      this.x += (nearLadder.cx - this.x) * 0.22;
 
-      // Clamp between platform top and ground.
-      this.y=Math.max(ladder.topY-44,Math.min(FLOOR-44,this.y));
+      if(upKey && !downKey){
+        this.y -= 2.8;
+        this.climbPhase += 0.22;
+      } else if(downKey && !upKey){
+        this.y += 2.8;
+        this.climbPhase -= 0.22;
+      }
 
-      // Reached top: snap onto platform cleanly.
-      if(this.y<=ladder.topY-43.5){
-        this.y=ladder.topY-44;
-        this.climbing=false;
-        this.onLadder=false;
-        this.onGround=true;
-        this.vy=0;
+      const topLimit  = nearLadder.topY - 44;
+      const botLimit  = FLOOR - 44;
+      this.y = Math.max(topLimit, Math.min(botLimit, this.y));
+
+      if(this.y <= topLimit + 1){
+        this.y = topLimit;
+        this.climbing = false;
+        this.onLadder = false;
+        this.onGround = true;
+        this.vy = 0;
       }
     } else {
-      this.climbing=false;
-      this.onLadder=!!ladder;
-
-      this.vy+=G_PLAYER;
-      this.y+=this.vy;
+      this.climbing = false;
+      this.onLadder = !!nearLadder;
+      this.vy += G_PLAYER;
+      this.y  += this.vy;
     }
 
     this.x+=this.vx;
@@ -1105,371 +1647,531 @@ class Player{
     }
   }
 
-  drawLeg(hipX, phase, front){
+  // ── YAN PROFİL BACAK — gerçek diz bükümlü ──────────
+  drawSideLeg(legX, legY, phase, back){
     const amt=this.walkAmt;
     const s=Math.sin(phase);
+    const c=Math.cos(phase);
     const crouchP=this.jumpPrepT>0?this.jumpPrepT/this.jumpPrepMax:0;
     const launchP=this.jumpStretchT>0?this.jumpStretchT/14:0;
-    const lift=Math.max(0,-Math.cos(phase))*9*amt;
-    let footX=hipX+s*7*amt;
-    let footY=0-lift;
-    if(crouchP>0){footX=hipX+(front?1:-1)*(6+crouchP*5);footY=2+crouchP*4;}
+    const thighLen=17, shinLen=15;
+
+    // Uyluk açısı — ileri/geri sallanır
+    let thighAng = s * 0.60 * amt;
+    // Diz bükümü — adım atarken diz gerçekten kırılır
+    // Ayak arkadayken (c>0) diz bükülür, öndeyken düzelir
+    let kneeFlx  = Math.max(0, c) * 0.75 * amt;
+    // Shin açısı: uyluktan farklı yönde = diz bükümlü görünüm
+    let shinAng  = thighAng - kneeFlx;
+
+    if(crouchP>0){
+      thighAng = 0.35*crouchP; shinAng = thighAng + 0.65*crouchP;
+    }
     if(this.state==='jump'){
       const rise=Math.max(0,Math.min(1,(-this.vy)/11));
-      footX=hipX+(front?1:-1)*(8+rise*6);
-      footY=-6-rise*6+launchP*6;
+      thighAng = back ? 0.55+rise*0.35 : -(0.45+rise*0.55);
+      shinAng  = thighAng + rise*1.0 + launchP*0.5; // diz havada tam bükülü
     }
-    // upper leg
-    ctx.strokeStyle=front?'#7B4E1E':'#5a3510';ctx.lineWidth=5;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(hipX,-10);ctx.lineTo(footX-s*3,footY-8);ctx.stroke();
-    // lower leg
-    ctx.strokeStyle=front?'#9B6422':'#7a4e18';ctx.lineWidth=4;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(footX-s*3,footY-8);ctx.lineTo(footX,footY);ctx.stroke();
-    // tiny claw foot
-    ctx.fillStyle=front?'#C88A3A':'#a06820';
-    ctx.beginPath();ctx.ellipse(footX,footY+1,5,3,s*.3,0,TAU);ctx.fill();
-    // claw tips
-    for(let ci=0;ci<3;ci++){
-      const cx=footX+(ci-1)*3.5, cy=footY+3;
-      ctx.strokeStyle=front?'#5a3010':'#3a200a';ctx.lineWidth=1.2;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+(ci-1)*.8,cy+4);ctx.stroke();
-    }
+
+    const kx=legX+Math.sin(thighAng)*thighLen;
+    const ky=legY+Math.cos(thighAng)*thighLen;
+    const fx=kx+Math.sin(shinAng)*shinLen;
+    const fy=ky+Math.cos(shinAng)*shinLen;
+
+    // Diz noktası (küçük yuvarlak)
+    const kneecapCol = back?'#1e2d6a':'#263580';
+
+    // Uyluk
+    ctx.strokeStyle=back?'#23336a':'#2c3e7a';ctx.lineWidth=back?7:8;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(legX,legY);ctx.lineTo(kx,ky);ctx.stroke();
+    // Diz kapağı
+    ctx.fillStyle=kneecapCol;ctx.beginPath();sarc(kx,ky,back?4:4.5);ctx.fill();
+    // Baldır
+    ctx.strokeStyle=back?'#2c3e7a':'#3a4f9a';ctx.lineWidth=back?6:7;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(kx,ky);ctx.lineTo(fx,fy);ctx.stroke();
+
+    // Spor ayakkabı (yandan)
+    ctx.save();ctx.translate(fx,fy);
+    const shoeAng=(shinAng-thighAng)*0.2;
+    ctx.rotate(shoeAng);
+    ctx.fillStyle=back?getCH().shoe2:getCH().shoe1;
+    ctx.beginPath();ctx.ellipse(5,2,13,5,0,0,TAU);ctx.fill();
+    // taban
+    ctx.fillStyle=back?'#cc3344':'#ff4757';
+    ctx.beginPath();ctx.ellipse(5,5,13,2.5,0,0,TAU);ctx.fill();
+    // bağcık
+    ctx.fillStyle='rgba(255,255,255,.8)';ctx.beginPath();sarc(2,-1,1.5);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.8)';ctx.beginPath();sarc(6,-1,1.5);ctx.fill();
+    ctx.restore();
   }
 
-  drawArm(shoulderX, shoulderY, phase, front){
+  // ── YAN PROFİL KOL + MİZRAK ────────────────────────
+  drawSideArm(shoulderX, shoulderY, phase, back){
     const amt=this.walkAmt;
     const s=Math.sin(phase);
     const isFiring=this.fireT>0;
-    let swing=s*.4*amt;
-    if(this.state==='jump'){swing=front?-.65:.55;}
-    // fire pose: back arm raised, holding spear up
-    if(isFiring){swing=front?.3:(-.9-Math.sin(this.fireT*.4)*.3);}
-    const upper=front?'#9B6422':'#7a4e18';
-    ctx.save();ctx.translate(shoulderX,shoulderY);ctx.rotate(swing);
-    ctx.strokeStyle=upper;ctx.lineWidth=5;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,10);ctx.stroke();
-    ctx.translate(0,10);ctx.rotate(-swing*.5);
-    ctx.strokeStyle=front?'#7B4E1E':'#5a3510';ctx.lineWidth=4;
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,9);ctx.stroke();
-    // tiny paw
-    ctx.fillStyle='#C88A3A';ctx.beginPath();sarc(0,10,3.5);ctx.fill();
-    // claws
-    for(let ci=0;ci<3;ci++){
-      ctx.strokeStyle='#5a3010';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo((ci-1)*2.5,12);ctx.lineTo((ci-1)*2.5,16);ctx.stroke();
+    const upperLen=13, foreLen=11;
+
+    // Ateş ederken: kollar öne-aşağı uzanır (yere vurma pozisyonu)
+    let swing, elbAng;
+    if(isFiring){
+      const fp = this.fireT / 14; // 1→0
+      swing = back ? (0.5 + fp*0.3) : (0.7 + fp*0.4);
+      elbAng = back ? (0.8 + fp*0.2) : (1.0 + fp*0.3);
+    } else {
+      swing = -s*0.60*amt;
+      if(this.state==='jump'){ swing = back ? 0.75 : -0.65; }
+      elbAng = swing + (back ? 0.25 : -0.25) * Math.max(0, -Math.sin(phase)*amt);
     }
-    ctx.restore();
-  }
 
-  drawClimb(){
-    if(this.inv>0&&Math.floor(this.inv/5)%2===1)return;
-    const ph=this.climbPhase;
-    const s=Math.sin(ph);
-    const c=Math.cos(ph);
-    const bob=Math.abs(s)*1.4;
+    const elbX=shoulderX+Math.sin(swing)*upperLen;
+    const elbY=shoulderY+Math.cos(swing)*upperLen;
+    const handX=elbX+Math.sin(elbAng)*foreLen;
+    const handY=elbY+Math.cos(elbAng)*foreLen;
 
-    ctx.save();
-    ctx.translate(this.x, this.y+44-bob);
-    ctx.scale(.62,.62);
+    const sleeveCol = back?getCH().sleeve2:getCH().sleeve1;
+    const skinCol   = back?'#deb882':'#f5cba0';
 
-    // shadow
-    ctx.fillStyle='rgba(0,0,0,.22)';
-    ctx.beginPath();sell(0,4,18,4,0);ctx.fill();
+    ctx.strokeStyle=sleeveCol;ctx.lineWidth=back?6:7;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(shoulderX,shoulderY);ctx.lineTo(elbX,elbY);ctx.stroke();
+    ctx.strokeStyle=skinCol;ctx.lineWidth=back?5:6;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(elbX,elbY);ctx.lineTo(handX,handY);ctx.stroke();
+    ctx.fillStyle=skinCol;ctx.beginPath();sarc(handX,handY,5);ctx.fill();
 
-    // ── BACK VIEW PANGOLIN ──────────────────────────
+    // MİZRAK — ateşte her iki elden birden tutuluyor (ön kolda çizilir)
+    if(!back){
+      ctx.save();
+      // Ateşte: mızrak aşağı-öne (yere vurma açısı ~100-110 derece)
+      let spearAng = isFiring
+        ? (Math.PI*0.58 + (1-(this.fireT/14))*0.15)
+        : -0.65 + Math.sin(phase*0.5)*0.15*amt;
+      ctx.translate(handX, handY);
+      ctx.rotate(spearAng);
 
-    // TAIL — curls up behind, sways with climb
-    ctx.save();
-    ctx.strokeStyle='#8B5E2A';ctx.lineWidth=7;ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(0,-14);
-    ctx.quadraticCurveTo(s*8+16,-2, 22+s*4, 14+c*3);
-    ctx.stroke();
-    ctx.strokeStyle='#6B4018';ctx.lineWidth=5;
-    ctx.beginPath();
-    ctx.moveTo(16,12+c*3);
-    ctx.quadraticCurveTo(26+s*4,22, 22+s*5,30);
-    ctx.stroke();
-    ctx.restore();
+      // Sap (uzun kahverengi)
+      ctx.strokeStyle='#8B5E2A';ctx.lineWidth=4;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(0,-48);ctx.stroke();
+      // Sap orta sarma detayı
+      ctx.strokeStyle='#6B3E0A';ctx.lineWidth=5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(0,5);ctx.lineTo(0,-5);ctx.stroke();
+      // Uç — metal üçgen
+      ctx.fillStyle='#c0c8d8';
+      ctx.beginPath();
+      ctx.moveTo(-5,-48);ctx.lineTo(5,-48);ctx.lineTo(0,-72);
+      ctx.fill();
+      // Uç parıltısı
+      ctx.fillStyle='rgba(255,255,255,.7)';
+      ctx.beginPath();ctx.moveTo(0,-72);ctx.lineTo(-2,-55);ctx.lineTo(0,-53);ctx.fill();
+      // Metal renk kenar
+      ctx.strokeStyle='#8090a8';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(-5,-48);ctx.lineTo(0,-72);ctx.lineTo(5,-48);ctx.stroke();
+      // Uç arkası kanat
+      ctx.fillStyle='#a04020';
+      ctx.beginPath();ctx.moveTo(-5,-48);ctx.lineTo(-10,-38);ctx.lineTo(0,-43);ctx.fill();
+      ctx.beginPath();ctx.moveTo(5,-48);ctx.lineTo(10,-38);ctx.lineTo(0,-43);ctx.fill();
 
-    // BODY — round back, pangolin brown
-    const bodyG=ctx.createRadialGradient(-4,-30,4,0,-28,20);
-    bodyG.addColorStop(0,'#D4943A');
-    bodyG.addColorStop(.5,'#A86C22');
-    bodyG.addColorStop(1,'#7A4C12');
-    ctx.fillStyle=bodyG;
-    ctx.beginPath();ctx.ellipse(0,-26,16,20,0,0,TAU);ctx.fill();
+      // Ateş efekti: mızrak ucunda (aşağı uç = -72 local) enerji parıltısı
+      if(isFiring){
+        const fireProgress = this.fireT / 14;
+        const glowR = 10 + fireProgress * 12;
+        const glow=ctx.createRadialGradient(0,-72,0,0,-72,glowR);
+        glow.addColorStop(0,'rgba(255,240,120,1.0)');
+        glow.addColorStop(.35,'rgba(255,160,30,0.85)');
+        glow.addColorStop(.7,'rgba(255,80,0,0.5)');
+        glow.addColorStop(1,'rgba(255,40,0,0)');
+        ctx.fillStyle=glow;ctx.beginPath();sarc(0,-72,glowR);ctx.fill();
+        ctx.fillStyle='rgba(255,255,220,0.95)';ctx.beginPath();sarc(0,-72,3*fireProgress+2);ctx.fill();
+      }
 
-    // SCALES on back — 3 rows, pangolin signature
-    const scaleData=[
-      // row 1 (top)
-      [-8,-40,9,5],[0,-41,9,5],[8,-40,9,5],
-      // row 2
-      [-12,-32,9,5],[-4,-33,9,5],[4,-33,9,5],[12,-32,9,5],
-      // row 3
-      [-8,-24,9,5],[0,-25,9,5],[8,-24,9,5],
-      // row 4 (bottom)
-      [-10,-17,8,4],[0,-17,8,4],[10,-17,8,4],
-    ];
-    scaleData.forEach(([sx,sy,srx,sry])=>{
-      ctx.fillStyle='#C8882E';
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,-.18,0,TAU);ctx.fill();
-      ctx.strokeStyle='#7A4C10';ctx.lineWidth=.8;
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,-.18,0,TAU);ctx.stroke();
-      // scale highlight
-      ctx.fillStyle='rgba(255,200,80,.15)';
-      ctx.beginPath();ctx.ellipse(sx-2,sy-1.5,srx*.5,sry*.4,-.18,0,TAU);ctx.fill();
-    });
+      // Arka el de mızrağı tutuyor (ateşte)
+      if(isFiring){
+        ctx.fillStyle='#deb882';
+        ctx.beginPath();sarc(0,-18,5.5);ctx.fill();
+        ctx.strokeStyle='#c42030';ctx.lineWidth=5;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(-6,-18);ctx.lineTo(6,-18);ctx.stroke();
+      }
 
-    // RUMP / pelvis
-    ctx.fillStyle='#A86C22';
-    ctx.beginPath();ctx.ellipse(0,-12,13,8,0,0,TAU);ctx.fill();
-
-    // HEAD from back — round cute head
-    ctx.save();
-    ctx.translate(0,-50);
-    const hg=ctx.createRadialGradient(-2,-6,2,0,-5,13);
-    hg.addColorStop(0,'#E0A84A');
-    hg.addColorStop(.6,'#B87830');
-    hg.addColorStop(1,'#8A5010');
-    ctx.fillStyle=hg;
-    ctx.beginPath();ctx.ellipse(0,-5,11,12,0,0,TAU);ctx.fill();
-
-    // little round ears sticking up
-    ctx.fillStyle='#C88828';
-    ctx.beginPath();ctx.ellipse(-8,-14,4.5,5,-.3,0,TAU);ctx.fill();
-    ctx.beginPath();ctx.ellipse(8,-14,4.5,5,.3,0,TAU);ctx.fill();
-    ctx.fillStyle='#F0C080';
-    ctx.beginPath();ctx.ellipse(-8,-14,2.5,3,-.3,0,TAU);ctx.fill();
-    ctx.beginPath();ctx.ellipse(8,-14,2.5,3,.3,0,TAU);ctx.fill();
-
-    // tiny neck scales visible from back
-    [[-5,-18,5,3],[0,-19,5,3],[5,-18,5,3]].forEach(([sx,sy,srx,sry])=>{
-      ctx.fillStyle='#C88828';
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,0,0,TAU);ctx.fill();
-      ctx.strokeStyle='#8A5010';ctx.lineWidth=.6;
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,0,0,TAU);ctx.stroke();
-    });
-    ctx.restore(); // head
-
-    // ARMS — alternating up/down grab on ladder rungs
-    const leftHandY=-44 - s*14;
-    const rightHandY=-44 + s*14;
-    const leftElbowY=-30+s*4;
-    const rightElbowY=-30-s*4;
-
-    // back left arm
-    ctx.strokeStyle='#8A5010';ctx.lineWidth=5;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(-9,-38);ctx.lineTo(-16,leftElbowY);ctx.lineTo(-18,leftHandY);ctx.stroke();
-    // back right arm
-    ctx.strokeStyle='#A86C22';ctx.lineWidth=5;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(9,-38);ctx.lineTo(16,rightElbowY);ctx.lineTo(18,rightHandY);ctx.stroke();
-
-    // paws gripping
-    ctx.fillStyle='#D4943A';
-    ctx.beginPath();sarc(-17,leftHandY,4.5);ctx.fill();
-    ctx.beginPath();sarc(17,rightHandY,4.5);ctx.fill();
-    // paw claws
-    [-18,-15,-12].forEach(cx=>{
-      ctx.strokeStyle='#5a3010';ctx.lineWidth=1.2;
-      ctx.beginPath();ctx.moveTo(cx+1,leftHandY+3);ctx.lineTo(cx+1,leftHandY+8);ctx.stroke();
-    });
-    [12,15,18].forEach(cx=>{
-      ctx.strokeStyle='#5a3010';ctx.lineWidth=1.2;
-      ctx.beginPath();ctx.moveTo(cx+1,rightHandY+3);ctx.lineTo(cx+1,rightHandY+8);ctx.stroke();
-    });
-
-    // LEGS — alternating, pressing ladder
-    const leftFootY=-6 + s*13;
-    const rightFootY=-6 - s*13;
-
-    ctx.strokeStyle='#8A5010';ctx.lineWidth=6;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(-6,-14);ctx.lineTo(-14,(leftFootY-14)/2-4);ctx.lineTo(-16,leftFootY);ctx.stroke();
-    ctx.strokeStyle='#A86C22';ctx.lineWidth=6;
-    ctx.beginPath();ctx.moveTo(6,-14);ctx.lineTo(14,(rightFootY-14)/2-4);ctx.lineTo(16,rightFootY);ctx.stroke();
-
-    // feet
-    ctx.fillStyle='#C88A3A';
-    ctx.beginPath();ctx.roundRect(-22,leftFootY-3,13,6,3);ctx.fill();
-    ctx.beginPath();ctx.roundRect(9,rightFootY-3,13,6,3);ctx.fill();
-
-    // tiny sparkle when touching ladder rungs
-    ctx.restore();
-    if(Math.abs(s)>.9 && Math.random()<.18){
-      parts.push(new Part(this.x+(Math.random()<.5?-12:12),this.y+22,'#ffd700'));
+      ctx.restore();
     }
   }
 
   draw(){
-    if(this.climbing){this.drawClimb();return;}
     if(this.inv>0&&Math.floor(this.inv/5)%2===1)return;
+
+    // ── TIRMANMA: sırta dönük özel çizim ───────────────
+    if(this.climbing){
+      const cp=this.climbPhase;
+      const s1=Math.sin(cp);
+      const s2=Math.sin(cp+Math.PI);
+      const CC=getCH();
+
+      ctx.save();
+      ctx.translate(this.x, this.y+44);
+      ctx.scale(this.scaleX*.54, this.scaleY*.51);
+
+      // Gölge
+      ctx.fillStyle='rgba(0,0,0,.15)';ctx.beginPath();sell(0,3,18,4,0);ctx.fill();
+
+      // Pantolon bel
+      ctx.fillStyle=CC.pants;ctx.beginPath();ctx.roundRect(-8,-14,20,10,3);ctx.fill();
+      ctx.fillStyle=CC.pants2;ctx.beginPath();ctx.roundRect(-8,-14,20,4,2);ctx.fill();
+      ctx.fillStyle=CC.beltBuckle;ctx.beginPath();ctx.roundRect(2,-13,7,4,1);ctx.fill();
+
+      // SOL KOL
+      const lArmSwing=-0.6-s1*0.5;
+      const lElbX=-10+Math.sin(lArmSwing)*13, lElbY=-36+Math.cos(lArmSwing)*13;
+      const lHandX=lElbX+Math.sin(lArmSwing-0.3)*11, lHandY=lElbY+Math.cos(lArmSwing-0.3)*11;
+      ctx.strokeStyle=CC.sleeve1;ctx.lineWidth=7;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(-10,-36);ctx.lineTo(lElbX,lElbY);ctx.stroke();
+      ctx.strokeStyle='#deb882';ctx.lineWidth=6;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(lElbX,lElbY);ctx.lineTo(lHandX,lHandY);ctx.stroke();
+      ctx.fillStyle='#f5cba0';ctx.beginPath();sarc(lHandX,lHandY,5);ctx.fill();
+
+      // SAĞ KOL
+      const rArmSwing=-0.6-s2*0.5;
+      const rElbX=14+Math.sin(rArmSwing)*13, rElbY=-36+Math.cos(rArmSwing)*13;
+      const rHandX=rElbX+Math.sin(rArmSwing+0.3)*11, rHandY=rElbY+Math.cos(rArmSwing+0.3)*11;
+      ctx.strokeStyle=CC.sleeve2;ctx.lineWidth=6;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(14,-36);ctx.lineTo(rElbX,rElbY);ctx.stroke();
+      ctx.strokeStyle='#deb882';ctx.lineWidth=5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(rElbX,rElbY);ctx.lineTo(rHandX,rHandY);ctx.stroke();
+      ctx.fillStyle='#f5cba0';ctx.beginPath();sarc(rHandX,rHandY,5);ctx.fill();
+
+      // SOL BACAK
+      const lLegSwing=s1*0.45;
+      const lKneeX=-4+Math.sin(lLegSwing)*17, lKneeY=-4+Math.cos(lLegSwing)*17;
+      const lFootX=lKneeX+Math.sin(lLegSwing+0.3)*15, lFootY=lKneeY+Math.cos(lLegSwing+0.3)*15;
+      ctx.strokeStyle=CC.pants;ctx.lineWidth=8;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(-4,-4);ctx.lineTo(lKneeX,lKneeY);ctx.stroke();
+      ctx.strokeStyle=CC.pants2;ctx.lineWidth=7;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(lKneeX,lKneeY);ctx.lineTo(lFootX,lFootY);ctx.stroke();
+      ctx.fillStyle=CC.shoe1;ctx.beginPath();ctx.ellipse(lFootX+3,lFootY+2,10,4,0,0,TAU);ctx.fill();
+      ctx.fillStyle=CC.shoe2;ctx.beginPath();ctx.ellipse(lFootX+3,lFootY+5,10,2,0,0,TAU);ctx.fill();
+
+      // SAĞ BACAK
+      const rLegSwing=s2*0.45;
+      const rKneeX=6+Math.sin(rLegSwing)*17, rKneeY=-4+Math.cos(rLegSwing)*17;
+      const rFootX=rKneeX+Math.sin(rLegSwing-0.3)*15, rFootY=rKneeY+Math.cos(rLegSwing-0.3)*15;
+      ctx.strokeStyle=CC.pants2;ctx.lineWidth=7;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(6,-4);ctx.lineTo(rKneeX,rKneeY);ctx.stroke();
+      ctx.strokeStyle=CC.pants;ctx.lineWidth=6;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(rKneeX,rKneeY);ctx.lineTo(rFootX,rFootY);ctx.stroke();
+      ctx.fillStyle=CC.shoe1;ctx.beginPath();ctx.ellipse(rFootX+3,rFootY+2,10,4,0,0,TAU);ctx.fill();
+      ctx.fillStyle=CC.shoe2;ctx.beginPath();ctx.ellipse(rFootX+3,rFootY+5,10,2,0,0,TAU);ctx.fill();
+
+      // ── PELERİN: karakterin renkleriyle sırtı kaplar ──
+      {
+        const t2=this.sa;
+        const w1=Math.sin(t2*0.19)*10+Math.sin(cp*0.28)*6;
+        const w2=Math.sin(t2*0.15+0.9)*13+Math.sin(cp*0.22+1)*8;
+        const w3=Math.sin(t2*0.12+1.8)*16+Math.sin(cp*0.18+2)*10;
+        ctx.fillStyle='rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(-10,-46);ctx.quadraticCurveTo(-14+w1*0.4,-28,-18+w2,-8);
+        ctx.quadraticCurveTo(-20+w3*0.7,4+w3*0.3,-10+w3,12+w3*0.5);
+        ctx.quadraticCurveTo(2+w2*0.3,16,14+w2*0.2,10+w2*0.4);
+        ctx.quadraticCurveTo(20+w1*0.5,2,16+w1*0.3,-10);
+        ctx.quadraticCurveTo(14+w1*0.2,-28,12,-46);ctx.fill();
+        const cG=ctx.createLinearGradient(-18,-46,16,14);
+        cG.addColorStop(0,CC.cape1);cG.addColorStop(0.35,CC.cape1);
+        cG.addColorStop(0.65,CC.cape2);cG.addColorStop(1,CC.cape3);
+        ctx.fillStyle=cG;
+        ctx.beginPath();
+        ctx.moveTo(-10,-46);ctx.quadraticCurveTo(-13+w1*0.3,-30,-16+w2,-10);
+        ctx.quadraticCurveTo(-19+w3*0.6,2+w3*0.25,-9+w3,10+w3*0.4);
+        ctx.quadraticCurveTo(2+w2*0.2,14,13+w2*0.15,8+w2*0.3);
+        ctx.quadraticCurveTo(18+w1*0.4,0,15+w1*0.2,-12);
+        ctx.quadraticCurveTo(13+w1*0.15,-30,12,-46);
+        ctx.quadraticCurveTo(6,-50,1,-50);ctx.quadraticCurveTo(-5,-50,-10,-46);ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1.5;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(12,-46);ctx.quadraticCurveTo(15+w1*0.15,-30,13+w1*0.1,-12);
+        ctx.quadraticCurveTo(11+w1*0.3,0,13+w2*0.15,8);ctx.stroke();
+        ctx.fillStyle='#ffd700';ctx.beginPath();sarc(1,-47,5);ctx.fill();
+        ctx.fillStyle='#ffec5c';ctx.beginPath();sarc(1,-47,3);ctx.fill();
+        ctx.fillStyle='#ff8c00';ctx.beginPath();sarc(1,-47,1.2);ctx.fill();
+      }
+
+      // ── BAŞ: karaktere özgü ──
+      {
+        ctx.save();ctx.translate(2,-54);
+        const hairWave=Math.sin(this.sa*0.22)*5+Math.sin(cp*0.35)*3;
+        const hw2=Math.sin(this.sa*0.18+1)*4+Math.sin(cp*0.28+0.8)*2;
+
+        if(CC.special==='helmet'){
+          const hG=ctx.createRadialGradient(-4,-20,2,0,-18,16);
+          hG.addColorStop(0,CC.hair);hG.addColorStop(.6,CC.hair2);hG.addColorStop(1,CC.shirt3);
+          ctx.fillStyle=hG;
+          ctx.beginPath();ctx.ellipse(0,-18,14,16,0,0,TAU);ctx.fill();
+          ctx.beginPath();ctx.ellipse(0,-28,13,9,0,Math.PI,0);ctx.fill();
+          ctx.fillStyle=CC.hair2;ctx.beginPath();ctx.roundRect(-16,-22,32,5,2);ctx.fill();
+          ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;
+          ctx.beginPath();ctx.moveTo(-12,-28);ctx.quadraticCurveTo(0,-34,12,-28);ctx.stroke();
+
+        } else if(CC.special==='mask'){
+          ctx.fillStyle='#101010';
+          ctx.beginPath();ctx.ellipse(0,-16,13,15,0,0,TAU);ctx.fill();
+          ctx.beginPath();ctx.ellipse(0,-28,12,8,0,Math.PI,0);ctx.fill();
+          ctx.fillStyle=CC.eyeCol||'#ff4757';
+          ctx.beginPath();ctx.ellipse(-4,-16,3.5,2.5,0,0,TAU);ctx.fill();
+          ctx.beginPath();ctx.ellipse(8,-16,3.5,2.5,0,0,TAU);ctx.fill();
+          ctx.strokeStyle='#222';ctx.lineWidth=3;
+          ctx.beginPath();ctx.moveTo(-13,-22);ctx.quadraticCurveTo(0,-28,13,-22);ctx.stroke();
+
+        } else if(CC.special==='antenna'){
+          const rG=ctx.createRadialGradient(-3,-20,2,0,-18,15);
+          rG.addColorStop(0,CC.shirt1);rG.addColorStop(.6,CC.shirt2);rG.addColorStop(1,CC.shirt3);
+          ctx.fillStyle=rG;ctx.beginPath();ctx.roundRect(-13,-30,26,22,4);ctx.fill();
+          ctx.fillStyle=CC.eyeCol||'#00e5ff';
+          ctx.beginPath();ctx.roundRect(-8,-20,6,5,2);ctx.fill();
+          ctx.beginPath();ctx.roundRect(2,-20,6,5,2);ctx.fill();
+          ctx.fillStyle='rgba(255,255,255,0.6)';
+          ctx.beginPath();sarc(-6,-19,1.5);ctx.fill();ctx.beginPath();sarc(4,-19,1.5);ctx.fill();
+          ctx.strokeStyle=CC.eyeCol||'#00e5ff';ctx.lineWidth=2;ctx.lineCap='round';
+          ctx.beginPath();ctx.moveTo(2,-30);ctx.lineTo(2,-44+hairWave*0.5);ctx.stroke();
+          ctx.fillStyle=CC.eyeCol||'#00e5ff';ctx.beginPath();sarc(2,-44+hairWave*0.5,3);ctx.fill();
+
+        } else if(CC.special==='hat'){
+          ctx.fillStyle=CC.skin;ctx.beginPath();ctx.ellipse(0,-16,13,14,0,0,TAU);ctx.fill();
+          ctx.fillStyle='#1a1a2a';
+          ctx.beginPath();ctx.roundRect(-16,-24,32,6,2);ctx.fill();
+          ctx.beginPath();ctx.roundRect(-10,-48,22,28,3);ctx.fill();
+          ctx.fillStyle=CC.beltCol;ctx.beginPath();ctx.roundRect(-16,-20,32,4,1);ctx.fill();
+          ctx.fillStyle='#fff';ctx.font='bold 10px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText('☠',1,-34);
+
+        } else if(CC.special==='ears'){
+          ctx.fillStyle=CC.skin;ctx.beginPath();ctx.ellipse(0,-16,13,15,0,0,TAU);ctx.fill();
+          ctx.fillStyle=CC.skin;
+          ctx.beginPath();ctx.moveTo(-13,-18);ctx.quadraticCurveTo(-22,-28,-18,-38);ctx.quadraticCurveTo(-14,-32,-11,-22);ctx.fill();
+          ctx.beginPath();ctx.moveTo(13,-18);ctx.quadraticCurveTo(22,-28,18,-38);ctx.quadraticCurveTo(14,-32,11,-22);ctx.fill();
+          ctx.fillStyle=CC.hair;ctx.beginPath();ctx.ellipse(0,-28,12,8,0,Math.PI,0);ctx.fill();
+          ctx.fillStyle=CC.hair2;
+          ctx.beginPath();ctx.moveTo(-8,-28);ctx.quadraticCurveTo(-12+hairWave,-38,-8+hairWave,-46);
+          ctx.quadraticCurveTo(-4+hairWave,-50,0+hairWave*0.6,-44);ctx.quadraticCurveTo(-2,-36,-8,-28);ctx.fill();
+          ctx.beginPath();ctx.moveTo(4,-28);ctx.quadraticCurveTo(10+hw2,-38,8+hw2,-46);
+          ctx.quadraticCurveTo(12+hw2,-50,14+hw2*0.6,-44);ctx.quadraticCurveTo(10,-34,4,-28);ctx.fill();
+
+        } else {
+          ctx.fillStyle=CC.hair2;
+          ctx.beginPath();ctx.moveTo(-13,-6);ctx.quadraticCurveTo(-18,-14,-15,-26);
+          ctx.quadraticCurveTo(-11,-36,-2,-38);ctx.quadraticCurveTo(8,-40,13,-30);
+          ctx.quadraticCurveTo(17,-16,13,-6);ctx.quadraticCurveTo(6,0,-2,2);
+          ctx.quadraticCurveTo(-8,2,-13,-6);ctx.fill();
+          ctx.fillStyle=CC.hair;
+          ctx.beginPath();ctx.moveTo(-11,-26);ctx.quadraticCurveTo(-10,-38,-2,-40);
+          ctx.quadraticCurveTo(8,-42,12,-30);ctx.quadraticCurveTo(10,-18,2,-16);
+          ctx.quadraticCurveTo(-6,-16,-11,-26);ctx.fill();
+          ctx.beginPath();ctx.moveTo(-8,-34);ctx.quadraticCurveTo(-14+hairWave,-42,-10+hairWave,-48);
+          ctx.quadraticCurveTo(-6+hairWave,-52,-2+hairWave*0.7,-46);ctx.quadraticCurveTo(-4,-38,-8,-34);ctx.fill();
+          ctx.beginPath();ctx.moveTo(-2,-36);ctx.quadraticCurveTo(2+hw2,-46,6+hw2,-52);
+          ctx.quadraticCurveTo(10+hw2,-56,12+hw2*0.8,-50);ctx.quadraticCurveTo(8,-40,2,-36);ctx.fill();
+          ctx.beginPath();ctx.moveTo(6,-32);ctx.quadraticCurveTo(12+hairWave*0.8,-40,16+hairWave,-46);
+          ctx.quadraticCurveTo(18+hairWave,-50,14+hairWave*0.6,-44);ctx.quadraticCurveTo(10,-36,6,-32);ctx.fill();
+        }
+
+        ctx.fillStyle='rgba(255,255,255,0.1)';
+        ctx.beginPath();ctx.ellipse(0,-26,5,8,-0.2,0,TAU);ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+      return;
+    }
+
     const f=this.face;
     const amt=this.walkAmt;
     const sw=Math.sin(this.walkPhase);
     const crouchP=this.jumpPrepT>0?this.jumpPrepT/this.jumpPrepMax:0;
     const launchP=this.jumpStretchT>0?this.jumpStretchT/14:0;
     const jumpArc=!this.onGround?Math.min(5,Math.max(-4,this.vy*.18)):0;
-    const bob=(this.onGround?Math.abs(sw)*2.8*amt:0) - launchP*4 + crouchP*7 + jumpArc;
+    const bob=(this.onGround?Math.abs(sw)*2.2*amt:0)-launchP*4+crouchP*7+jumpArc;
     const isFiring=this.fireT>0;
-    // when firing, character faces backward (away from camera direction)
-    const drawFace=isFiring?-f:f;
+    const t=this.sa; // zaman sayacı
 
-    // world-space dust behind feet
     for(const d of this.dust){
       ctx.save();ctx.globalAlpha=Math.max(0,d.life/28)*.28;
-      ctx.fillStyle='#c8a060';ctx.beginPath();sell(d.x,d.y,d.r*1.7,d.r*.75,0);ctx.fill();ctx.restore();
+      ctx.fillStyle='#aaa';ctx.beginPath();sell(d.x,d.y,d.r*1.7,d.r*.75,0);ctx.fill();ctx.restore();
     }
 
     ctx.save();
     const skidShake=this.skidT>0?Math.sin(this.skidT*1.7)*1.0:0;
     ctx.translate(this.x+skidShake, this.y+44+this.landDip-bob);
     ctx.rotate(this.leanAngle);
-    ctx.scale(drawFace*this.scaleX*.58, this.scaleY*.58);
+    ctx.scale(f*this.scaleX*.465, this.scaleY*.465);
 
-    // ── SHADOW ──────────────────────────────────────
-    ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();sell(0,4+bob,20+amt*6,4,0);ctx.fill();
+    // GÖLGE
+    ctx.fillStyle='rgba(0,0,0,.18)';ctx.beginPath();sell(0,3,22+amt*6,5,0);ctx.fill();
 
-    // ── TAIL ────────────────────────────────────────
-    // tail sways with walk cycle, curls up when jumping
-    const tailCurl=!this.onGround?-.6:crouchP*.5;
-    const tailSway=sw*.25*amt;
+    // ── PELERİN (gövdenin arkasında, en altta çizilir) ─
     ctx.save();
-    ctx.strokeStyle='#8B5E2A';ctx.lineWidth=8;ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(12,-16);
-    ctx.quadraticCurveTo(28+tailSway*10,-10+tailCurl*5, 32+tailSway*14, 2+tailCurl*8);
-    ctx.stroke();
-    ctx.strokeStyle='#A87030';ctx.lineWidth=6;
-    ctx.beginPath();
-    ctx.moveTo(30,2+tailCurl*8);
-    ctx.quadraticCurveTo(38+tailSway*8, 14+tailCurl*12, 30+tailSway*5, 24+tailCurl*18);
-    ctx.stroke();
-    // tail tip ball
-    ctx.fillStyle='#C89040';
-    ctx.beginPath();sarc(28+tailSway*5, 24+tailCurl*18, 5);ctx.fill();
-    ctx.restore();
+    // Pelerin omuzdan çıkar, sırttan aşağı ve arkaya uzanır
+    // Hareket: yürüyüşte dalgalanır, zıplamada geriye uçar
+    const capeBaseX = -8;  // omuz arka
+    const capeBaseY = -44;
+    const capeSpeed = amt * Math.sin(t*0.18) * 10;  // yürüyüş dalgası
+    const capeFloat = !this.onGround ? Math.min(20, (-this.vy)*1.5) : 0; // zıplamada geriye
+    const capeWave1 = Math.sin(t*0.22)*6*amt + capeFloat*0.4;
+    const capeWave2 = Math.sin(t*0.18+0.8)*8*amt + capeFloat*0.6;
+    const capeWave3 = Math.sin(t*0.15+1.5)*10*amt + capeFloat*0.8;
+    const capeDrop  = 50 + crouchP*(-15) + capeFloat*0.5;
 
-    // ── BACK LEGS ───────────────────────────────────
-    this.drawLeg(6, this.walkPhase+Math.PI, false);
-    this.drawLeg(-6, this.walkPhase, true);
-
-    // ── BODY ────────────────────────────────────────
-    ctx.save();ctx.rotate(sw*.03*amt);
-    const breathB=Math.sin(this.breathPhase)*.012;
-
-    // main body — round pangolin silhouette
-    const bodyG=ctx.createRadialGradient(-3,-28,3,0,-26,22);
-    bodyG.addColorStop(0,'#D4943A');
-    bodyG.addColorStop(.5,'#A86C22');
-    bodyG.addColorStop(1,'#7A4C12');
-    ctx.fillStyle=bodyG;
+    // Pelerin gölgesi (alt katman, koyu)
+    ctx.fillStyle='rgba(60,0,80,0.35)';
     ctx.beginPath();
-    ctx.ellipse(0*(1+breathB),-24*(1+breathB*.5),18*(1+breathB),22*(1+breathB*.5),0,0,TAU);
+    ctx.moveTo(capeBaseX, capeBaseY);
+    ctx.quadraticCurveTo(capeBaseX-10+capeWave1*0.5, capeBaseY+capeDrop*0.4,
+                          capeBaseX-18+capeWave2, capeBaseY+capeDrop);
+    ctx.quadraticCurveTo(capeBaseX-10+capeWave3*0.5, capeBaseY+capeDrop+8,
+                          capeBaseX+8, capeBaseY+capeDrop-4);
+    ctx.quadraticCurveTo(capeBaseX+6, capeBaseY+capeDrop*0.4, capeBaseX+2, capeBaseY+10);
     ctx.fill();
 
-    // SCALES — pangolin's defining feature, 4 rows
-    const scales=[
-      // row 1 top
-      [-9,-42,8.5,5],[-1,-43,8.5,5],[7,-42,8.5,5],
-      // row 2
-      [-12,-34,8.5,5],[-3,-35,9,5],[6,-35,9,5],[14,-33,8,5],
-      // row 3
-      [-10,-26,9,5],[-1,-27,9,5],[8,-26,9,5],
-      // row 4
-      [-8,-18,8,4.5],[0,-19,8.5,4.5],[8,-18,8,4.5],
-      // row 5 lower
-      [-5,-11,7,4],[4,-11,7,4],
-    ];
-    scales.forEach(([sx,sy,srx,sry])=>{
-      ctx.fillStyle='#C8882E';
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,-.15,0,TAU);ctx.fill();
-      ctx.strokeStyle='#7A4C10';ctx.lineWidth=.7;
-      ctx.beginPath();ctx.ellipse(sx,sy,srx,sry,-.15,0,TAU);ctx.stroke();
-      // scale sheen
-      ctx.fillStyle='rgba(255,190,60,.14)';
-      ctx.beginPath();ctx.ellipse(sx-2,sy-1.5,srx*.45,sry*.38,-.15,0,TAU);ctx.fill();
-    });
+    // Ana pelerin — mor/lacivert
+    const capeG=ctx.createLinearGradient(capeBaseX-20,capeBaseY,capeBaseX+8,capeBaseY+capeDrop);
+    capeG.addColorStop(0,getCH().cape1);
+    capeG.addColorStop(.4,getCH().cape2);
+    capeG.addColorStop(1,getCH().cape3);
+    ctx.fillStyle=capeG;
+    ctx.beginPath();
+    ctx.moveTo(capeBaseX+2, capeBaseY+10); // boyun/omuz başlangıç
+    ctx.quadraticCurveTo(capeBaseX+5, capeBaseY+capeDrop*0.35,
+                          capeBaseX+6, capeBaseY+capeDrop-6);
+    // Alt kenar dalgalı
+    ctx.quadraticCurveTo(capeBaseX+capeWave3*0.4,   capeBaseY+capeDrop+6,
+                          capeBaseX-8+capeWave3,       capeBaseY+capeDrop+10);
+    ctx.quadraticCurveTo(capeBaseX-14+capeWave2,     capeBaseY+capeDrop+8,
+                          capeBaseX-20+capeWave2,      capeBaseY+capeDrop);
+    ctx.quadraticCurveTo(capeBaseX-12+capeWave1,     capeBaseY+capeDrop*0.5,
+                          capeBaseX-8+capeSpeed*0.3,   capeBaseY+capeDrop*0.2);
+    ctx.quadraticCurveTo(capeBaseX-4, capeBaseY+8, capeBaseX+2, capeBaseY+10);
+    ctx.fill();
 
-    // belly / front — lighter
-    const bellyG=ctx.createRadialGradient(0,-20,2,0,-22,10);
-    bellyG.addColorStop(0,'#F0C060');bellyG.addColorStop(1,'rgba(200,140,40,0)');
-    ctx.fillStyle=bellyG;
-    ctx.beginPath();ctx.ellipse(-2,-22,9,13,0,0,TAU);ctx.fill();
+    // Pelerin iç yüzü (hafif parlak kenar)
+    ctx.strokeStyle='rgba(180,120,255,0.4)';ctx.lineWidth=1.5;ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(capeBaseX+6, capeBaseY+capeDrop-6);
+    ctx.quadraticCurveTo(capeBaseX+capeWave3*0.4, capeBaseY+capeDrop+6,
+                          capeBaseX-8+capeWave3,    capeBaseY+capeDrop+10);
+    ctx.stroke();
 
-    // ── ARMS ────────────────────────────────────────
-    this.drawArm(-10,-38, this.walkPhase, false);
-    this.drawArm(10,-38, this.walkPhase+Math.PI, true);
+    // Pelerin broş (omuzda altın iğne)
+    ctx.fillStyle='#ffd700';ctx.beginPath();sarc(capeBaseX+4,capeBaseY+14,4);ctx.fill();
+    ctx.fillStyle='#ffec5c';ctx.beginPath();sarc(capeBaseX+4,capeBaseY+14,2);ctx.fill();
+    ctx.restore();
 
-    // ── NECK ────────────────────────────────────────
-    ctx.fillStyle='#C88A30';
-    ctx.beginPath();ctx.ellipse(0,-44,7,6,0,0,TAU);ctx.fill();
-    // neck scales
-    ctx.fillStyle='#B07828';
-    ctx.beginPath();ctx.ellipse(0,-45,6,4,0,0,TAU);ctx.fill();
+    // ARKA KOL
+    this.drawSideArm(-4,-38,this.walkPhase,true);
 
-    // ── HEAD ─────────────────────────────────────────
+    // ARKA BACAK
+    this.drawSideLeg(-2,-4,this.walkPhase+Math.PI,true);
+
+    // GÖVDE — kırmızı tişört yandan
+    ctx.save();ctx.rotate(sw*.018*amt);
+    const shirtG=ctx.createRadialGradient(4,-28,3,2,-26,20);
+    shirtG.addColorStop(0,getCH().shirt1);shirtG.addColorStop(.45,getCH().shirt2);shirtG.addColorStop(1,getCH().shirt3);
+    ctx.fillStyle=shirtG;
+    ctx.beginPath();
+    ctx.moveTo(-8,-8);ctx.lineTo(-10,-44);
+    ctx.quadraticCurveTo(-8,-50,0,-50);
+    ctx.quadraticCurveTo(8,-50,14,-46);
+    ctx.lineTo(12,-8);
+    ctx.quadraticCurveTo(2,-4,-8,-8);
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.10)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-10,-44);ctx.lineTo(-8,-8);ctx.stroke();
+    // pantolon bel
+    ctx.fillStyle=getCH().pants;ctx.beginPath();ctx.roundRect(-8,-14,20,10,3);ctx.fill();
+    ctx.fillStyle=getCH().pants2;ctx.beginPath();ctx.roundRect(-8,-14,20,4,2);ctx.fill();
+    ctx.fillStyle=getCH().beltBuckle;ctx.beginPath();ctx.roundRect(2,-13,7,6,2);ctx.fill();
+    ctx.restore();
+
+    // ÖN KOL (mızrakla)
+    this.drawSideArm(8,-40,this.walkPhase+Math.PI,false);
+
+    // ÖN BACAK
+    this.drawSideLeg(4,-4,this.walkPhase,false);
+
+    // BAŞ — yan profil
     ctx.save();
-    const headBob=amt*Math.abs(sw)*1.4;
-    ctx.translate(0,-48-headBob);ctx.rotate(sw*.035*amt);
+    const headBob=amt*Math.abs(sw)*1.2;
+    ctx.translate(2,-54-headBob);ctx.rotate(sw*.025*amt);
 
-    // head shape — elongated pangolin snout
-    const hg=ctx.createRadialGradient(-2,-8,2,0,-8,14);
-    hg.addColorStop(0,'#E8C060');
-    hg.addColorStop(.55,'#C89030');
-    hg.addColorStop(1,'#8A5810');
-    ctx.fillStyle=hg;
-    // main head
-    ctx.beginPath();ctx.ellipse(0,-8,11,12,0,0,TAU);ctx.fill();
-    // elongated snout — pangolin signature
-    ctx.fillStyle='#D4A040';
-    ctx.beginPath();ctx.ellipse(10,-7,9,6,.15,0,TAU);ctx.fill();
-    ctx.fillStyle='#B88028';
-    ctx.beginPath();ctx.ellipse(16,-7,5,4,.1,0,TAU);ctx.fill();
-    // nostril
-    ctx.fillStyle='#8A5010';
-    ctx.beginPath();sarc(18,-6,1.5);ctx.fill();
-    ctx.beginPath();sarc(18,-8,1.5);ctx.fill();
+    // SAÇLAR arka/ense
+    ctx.fillStyle=getCH().hair;
+    ctx.beginPath();
+    ctx.moveTo(-2,-4);
+    ctx.quadraticCurveTo(-18,-10,-18,-22);
+    ctx.quadraticCurveTo(-16,-34,-6,-36);
+    ctx.quadraticCurveTo(0,-38,4,-34);
+    ctx.lineTo(2,-14);ctx.fill();
+    // üst tutamlar
+    ctx.fillStyle='#6a3a18';
+    ctx.beginPath();ctx.moveTo(4,-34);ctx.quadraticCurveTo(14,-42,16,-36);ctx.quadraticCurveTo(14,-28,8,-26);ctx.fill();
+    ctx.beginPath();ctx.moveTo(0,-34);ctx.quadraticCurveTo(6,-44,12,-40);ctx.quadraticCurveTo(14,-32,6,-28);ctx.fill();
+    // perçem
+    ctx.fillStyle='#5c3010';
+    ctx.beginPath();ctx.moveTo(8,-26);ctx.quadraticCurveTo(16,-20,14,-10);ctx.quadraticCurveTo(8,-8,6,-16);ctx.fill();
 
-    // EARS — small round
-    ctx.fillStyle='#C88828';
-    ctx.beginPath();ctx.ellipse(-6,-18,4,4.5,-.15,0,TAU);ctx.fill();
-    ctx.beginPath();ctx.ellipse(4,-19,3.5,4,.1,0,TAU);ctx.fill();
-    ctx.fillStyle='#F0C080';
-    ctx.beginPath();ctx.ellipse(-6,-18,2.2,2.5,-.15,0,TAU);ctx.fill();
-    ctx.beginPath();ctx.ellipse(4,-19,2,2.3,.1,0,TAU);ctx.fill();
+    // YÜZ profil
+    const faceG=ctx.createRadialGradient(4,-14,3,2,-12,16);
+    faceG.addColorStop(0,'#fde8c8');faceG.addColorStop(.55,'#f5cba0');faceG.addColorStop(1,'#dba870');
+    ctx.fillStyle=faceG;
+    ctx.beginPath();
+    ctx.moveTo(-2,-2);
+    ctx.quadraticCurveTo(12,0,14,-6);
+    ctx.quadraticCurveTo(18,-10,16,-18);
+    ctx.quadraticCurveTo(14,-26,10,-28);
+    ctx.quadraticCurveTo(6,-32,2,-30);
+    ctx.quadraticCurveTo(-4,-28,-6,-20);
+    ctx.quadraticCurveTo(-6,-10,-2,-2);
+    ctx.fill();
 
-    // EYE — big cute eye with sparkle
+    // KULAK
+    ctx.fillStyle='#f5cba0';ctx.beginPath();ctx.ellipse(-5,-16,5,6,.1,0,TAU);ctx.fill();
+    ctx.fillStyle='#e0a070';ctx.beginPath();ctx.ellipse(-5,-16,3,4,.1,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(220,140,100,.5)';ctx.beginPath();ctx.ellipse(-5,-16,1.5,2.5,.1,0,TAU);ctx.fill();
+
+    // yanak
+    ctx.fillStyle='rgba(255,155,130,.28)';ctx.beginPath();ctx.ellipse(8,-10,7,5,.1,0,TAU);ctx.fill();
+
+    // KAŞLAR
+    ctx.strokeStyle='#5c3010';ctx.lineWidth=2.2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(2,-24);ctx.quadraticCurveTo(8,-28,13,-24);ctx.stroke();
+
+    // GÖZ
     if(!this._blinking){
-      // eye white
-      ctx.fillStyle='rgba(255,255,255,.92)';
-      ctx.beginPath();sell(-4,-12,5.5,4,.08);ctx.fill();
-      // iris
-      const eg=ctx.createRadialGradient(-4,-12,0,-4,-12,4.5);
-      eg.addColorStop(0,'#4A2800');eg.addColorStop(.4,'#2A1200');eg.addColorStop(1,'#1A0800');
-      ctx.fillStyle=eg;
-      ctx.beginPath();sell(-4,-12,3.5,3,.08);ctx.fill();
-      // pupil gleam
-      ctx.fillStyle='rgba(255,255,255,.9)';
-      ctx.beginPath();sarc(-2.5,-13,1.1);ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.55)';
-      ctx.beginPath();sarc(-5,-14,.7);ctx.fill();
-      // eye ring
-      ctx.strokeStyle='rgba(80,40,0,.35)';ctx.lineWidth=.8;
-      ctx.beginPath();sell(-4,-12,5.5,4,.08);ctx.stroke();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(8,-20,7,6,-.1,0,TAU);ctx.fill();
+      const iris=ctx.createRadialGradient(8,-20,0,8,-20,5);
+      iris.addColorStop(0,'#5b8dd9');iris.addColorStop(.5,'#2255aa');iris.addColorStop(1,'#0a1a55');
+      ctx.fillStyle=iris;ctx.beginPath();ctx.ellipse(8,-20,5,5,0,0,TAU);ctx.fill();
+      ctx.fillStyle='#050a20';ctx.beginPath();sarc(8,-20,2.8);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();sarc(10,-22,2.2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();sarc(6,-21,1.2);ctx.fill();
+      ctx.strokeStyle='rgba(50,30,10,.6)';ctx.lineWidth=1.2;ctx.lineCap='round';
+      [[4,-26],[7,-27],[11,-26],[14,-24]].forEach(([ex,ey])=>{
+        ctx.beginPath();ctx.moveTo(ex,ey+1);ctx.lineTo(ex-.5,ey-3);ctx.stroke();
+      });
     } else {
-      ctx.strokeStyle='rgba(100,60,0,.6)';ctx.lineWidth=1.5;ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(-9,-11);ctx.lineTo(1,-11);ctx.stroke();
+      ctx.strokeStyle='rgba(80,50,20,.7)';ctx.lineWidth=2.8;ctx.lineCap='round';
+      ctx.beginPath();ctx.arc(8,-20,6,.2,Math.PI-.2,true);ctx.stroke();
     }
 
-    // tiny smile
-    ctx.strokeStyle='#8A5010';ctx.lineWidth=1.3;ctx.lineCap='round';
-    ctx.beginPath();ctx.arc(13,-4,2.5,.1,Math.PI-.1);ctx.stroke();
+    // BURUN
+    ctx.fillStyle='#f0b882';
+    ctx.beginPath();ctx.moveTo(14,-12);ctx.quadraticCurveTo(20,-14,20,-10);ctx.quadraticCurveTo(20,-6,14,-6);ctx.fill();
+    ctx.fillStyle='rgba(160,80,40,.5)';ctx.beginPath();ctx.ellipse(18,-8,2,1.5,.3,0,TAU);ctx.fill();
 
-    ctx.restore(); // head
-    ctx.restore(); // body+torso
+    // AĞIZ
+    ctx.strokeStyle='rgba(180,80,60,.75)';ctx.lineWidth=2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(14,-4);ctx.quadraticCurveTo(12,2,8,2);ctx.stroke();
+    if(this.state==='jump'||isFiring){
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(9,-3,6,4,1);ctx.fill();
+    }
+
+    ctx.restore(); // baş
     ctx.restore(); // root
 
-    // ── POWER AURAS (world space) ──────────────────
+    // POWER AURAS
     if(shield){
       for(let i=0;i<3;i++){
         const a=this.sa+i*(TAU/3),sx=this.x+Math.cos(a)*28,sy=this.y+22+Math.sin(a)*16;
@@ -1566,6 +2268,49 @@ class Balloon{
 }
 
 // ═══════════════════════════════════════════════════
+// MUZZLE FLASH — mızrak ucundan çıkan ateş parlaması
+// ═══════════════════════════════════════════════════
+class MuzzleFlash{
+  constructor(x,y){
+    this.x=x; this.y=y;
+    this.life=12; this.ml=12;
+    this.rays=Array.from({length:8},(_,i)=>({
+      ang: i*(TAU/8)+Math.random()*.3,
+      len: 12+Math.random()*16,
+      w: 1.5+Math.random()*2
+    }));
+  }
+  update(){ this.life--; }
+  draw(){
+    const a=this.life/this.ml; if(a<=0)return;
+    ctx.save();
+    // Merkez parlak top
+    const cg=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,18*a);
+    cg.addColorStop(0,'rgba(255,255,200,'+a+')');
+    cg.addColorStop(.35,'rgba(255,180,30,'+(a*.85)+')');
+    cg.addColorStop(.7,'rgba(255,80,0,'+(a*.5)+')');
+    cg.addColorStop(1,'rgba(255,40,0,0)');
+    ctx.fillStyle=cg; ctx.beginPath(); sarc(this.x,this.y,18*a); ctx.fill();
+    // Işın çizgileri
+    for(const r of this.rays){
+      ctx.strokeStyle='rgba(255,220,80,'+a*.9+')';
+      ctx.lineWidth=r.w*a;ctx.lineCap='round';
+      ctx.shadowColor='rgba(255,160,30,0.8)';ctx.shadowBlur=6*a;
+      ctx.beginPath();
+      ctx.moveTo(this.x,this.y);
+      ctx.lineTo(this.x+Math.cos(r.ang)*r.len*a, this.y+Math.sin(r.ang)*r.len*a);
+      ctx.stroke();
+    }
+    ctx.shadowBlur=0;
+    // İç beyaz çekirdek
+    ctx.fillStyle='rgba(255,255,255,'+(a*.95)+')';
+    ctx.beginPath();sarc(this.x,this.y,5*a);ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha=1;
+  }
+}
+
+// ═══════════════════════════════════════════════════
 // IMPACT EFFECTS
 // ═══════════════════════════════════════════════════
 class ImpactSpark{
@@ -1645,12 +2390,13 @@ class ImpactFlash{
 // PROJECTILE — rope to ceiling, spinning tip
 // ═══════════════════════════════════════════════════
 class Proj{
-  constructor(x,y,big){
+  constructor(x,y,big,down){
     this.baseX=x; this.baseY=y;
     this.tipY=y; this.active=true;
     this.big=big||false;
+    this.down=down||false; // aşağı vuruş modu
     this.angle=0;
-    this.speed=big?5.5:4;
+    this.speed=big?6.5:5;
     this.done=false;
     // impact
     this.impacting=false;
@@ -1672,19 +2418,35 @@ class Proj{
     }
 
     if(!this.done){
-      this.tipY-=this.speed;
-      // ceiling = CEIL or platform underside
-      let ceil=CEIL;
-      for(const p of platforms){
-        // Only collide with platform underside when the shot STARTED below that platform.
-        // If player stands on top of a platform, baseY is above p.y, so the spear can travel upward normally.
-        if(this.baseY>p.y+18 && this.baseX>p.x&&this.baseX<p.x+p.w&&this.tipY<=p.y+16&&this.tipY>=p.y-80)
-          ceil=Math.max(ceil,p.y);
-      }
-      if(this.tipY<=ceil){
-        this.tipY=ceil;
-        this.done=true;
-        this._triggerImpact();
+      if(this.down){
+        // AŞAĞI MOD: tipY aşağı gider, zemine çarpar
+        this.tipY+=this.speed;
+        if(this.tipY>=FLOOR){
+          this.tipY=FLOOR;
+          this.done=true;
+          this._triggerImpact();
+        }
+        // platform üstüne çarpma
+        for(const p of platforms){
+          if(this.baseX>p.x&&this.baseX<p.x+p.w&&this.tipY>=p.y&&this.tipY<=p.y+20){
+            this.tipY=p.y;
+            this.done=true;
+            this._triggerImpact();
+          }
+        }
+      } else {
+        this.tipY-=this.speed;
+        // ceiling = CEIL or platform underside
+        let ceil=CEIL;
+        for(const p of platforms){
+          if(this.baseY>p.y+18 && this.baseX>p.x&&this.baseX<p.x+p.w&&this.tipY<=p.y+16&&this.tipY>=p.y-80)
+            ceil=Math.max(ceil,p.y);
+        }
+        if(this.tipY<=ceil){
+          this.tipY=ceil;
+          this.done=true;
+          this._triggerImpact();
+        }
       }
     } else {
       // if done but no balloon hit, start impact
@@ -1705,7 +2467,7 @@ class Proj{
     this.impactFrame=0;
     this.impactX=this.baseX;
     this.impactY=this.tipY;
-    this.retractBaseY=this.baseY;
+    this.retractBaseY=this.baseY; // rope retracts toward base
 
     const isMag=magT>0,isGiant=giantT>0;
     const col=isMag?'#88ccff':isGiant?'#ff8844':'#ffdd55';
@@ -1727,6 +2489,33 @@ class Proj{
     // ── FLASH ────────────────────────────────────
     parts.push(new ImpactFlash(this.impactX, this.impactY, col));
 
+    // Aşağı vuruş (görünmez down proj yerden çarptı):
+    // → mızrak ucunun tam çarptığı noktadan yukarı gerçek ip+mızrak fırlat
+    // → yerden kıvılcım + çatlak efekti
+    if(this.down && running){
+      const gx = this.impactX;
+      const gy = this.impactY; // yerin tam yüzeyi
+
+      // Zemin çatlama efekti
+      parts.push(new GroundCrack(gx, gy));
+
+      // Yerden yatay+yukarı kıvılcımlar (mızrak ucundan çıkıyor)
+      for(let i=0;i<14;i++){
+        const ang = -Math.PI*0.5 + (Math.random()-0.5)*Math.PI*1.4; // yarı yelpaze yukarı
+        const spd = 2.5+Math.random()*5.5;
+        parts.push(new ImpactSpark(gx, gy, Math.cos(ang)*spd, Math.sin(ang)*spd*0.7-1, col, '#ffff99', true));
+      }
+      // MuzzleFlash tam çarpma noktasında
+      parts.push(new MuzzleFlash(gx, gy));
+
+      setTimeout(()=>{
+        if(!running)return;
+        // Yukarı giden gerçek mızrak — TAM çarpma noktasından başlar
+        const upProj = new Proj(gx, gy, this.big, false);
+        projs.push(upProj);
+      }, 30);
+    }
+
     // sound
     if(AC&&masterGain){
       try{
@@ -1743,10 +2532,15 @@ class Proj{
   }
   draw(){
     if(!this.active)return;
+    if(this._invisible)return; // görünmez down proj - sadece çarpma hesabı
     // during impact, use retractBaseY for rope and fade everything out
     const drawBaseY=this.impacting?this.retractBaseY:this.baseY;
-    const ropeLen=drawBaseY-this.tipY;
+    // down modda ip baseY'den tipY'ye aşağı uzanır
+    const ropeLen=this.down?(this.tipY-drawBaseY):(drawBaseY-this.tipY);
     if(ropeLen<1)return;
+    // ip çizimi için her zaman üstten aşağıya: topY=min, botY=max
+    const ropeTopY=this.down?drawBaseY:this.tipY;
+    const ropeBotY=this.down?this.tipY:drawBaseY;
     const impactAlpha=this.impacting?Math.max(0,1-this.impactFrame/6):1;
     if(impactAlpha<=0)return;
     const ts=this.big?16:11;
@@ -1772,13 +2566,13 @@ class Proj{
     efG.addColorStop(.6,efC+'.06)');
     efG.addColorStop(1,'transparent');
     ctx.fillStyle=efG;
-    ctx.fillRect(this.baseX-efW,this.tipY,efW*2,ropeLen);
+    ctx.fillRect(this.baseX-efW,ropeTopY,efW*2,ropeLen);
 
     // ── BRAIDED ROPE ──────────────────────────────
     // Strand A
     ctx.beginPath();
     for(let i=0;i<=steps;i++){
-      const t=i/steps,ry=this.tipY+t*ropeLen;
+      const t=i/steps,ry=ropeTopY+t*ropeLen;
       const wave=Math.sin(this.angle*2+t*18)*amp*(1-t*.3);
       if(i===0)ctx.moveTo(this.baseX+wave,ry);else ctx.lineTo(this.baseX+wave,ry);
     }
@@ -1788,7 +2582,7 @@ class Proj{
     // Strand B
     ctx.beginPath();
     for(let i=0;i<=steps;i++){
-      const t=i/steps,ry=this.tipY+t*ropeLen;
+      const t=i/steps,ry=ropeTopY+t*ropeLen;
       const wave=Math.sin(this.angle*2+t*18+Math.PI)*amp*(1-t*.3);
       if(i===0)ctx.moveTo(this.baseX+wave,ry);else ctx.lineTo(this.baseX+wave,ry);
     }
@@ -1797,7 +2591,7 @@ class Proj{
     // Glint
     ctx.beginPath();
     for(let i=0;i<=steps;i++){
-      const t=i/steps,ry=this.tipY+t*ropeLen;
+      const t=i/steps,ry=ropeTopY+t*ropeLen;
       const wave=Math.sin(this.angle*2+t*18)*(amp*.45)*(1-t*.5);
       if(i===0)ctx.moveTo(this.baseX+wave,ry);else ctx.lineTo(this.baseX+wave,ry);
     }
@@ -1900,14 +2694,14 @@ class Proj{
     };
 
     // ── DRAW SPEARHEADS ───────────────────────────
+    // down modda uç aşağıda (this.tipY büyük), yukarı modda üstte (this.tipY küçük)
+    const headFlipped = this.down; // aşağı vuruşta baş aşağı çevrilir
     if(dualShot){
-      // DOUBLE-HEADED LANCE: tip + midpoint, opposite spin
-      const midY=this.tipY+ropeLen*.5;
+      const midY=ropeTopY+ropeLen*.5;
       const sx=this.baseX+Math.cos(this.angle)*(this.big?9:6);
       const mx=this.baseX+Math.cos(this.angle+Math.PI)*(this.big?9:6);
-      drawSpearhead(sx,this.tipY,this.angle,ts,false);
-      drawSpearhead(mx,midY,this.angle+Math.PI,ts*.85,true);
-      // connector ring at midpoint
+      drawSpearhead(sx,this.tipY,this.angle,ts,headFlipped);
+      drawSpearhead(mx,midY,this.angle+Math.PI,ts*.85,!headFlipped);
       ctx.save();
       ctx.strokeStyle=gold1;ctx.lineWidth=2;
       ctx.shadowColor=glowCol;ctx.shadowBlur=8;
@@ -1915,7 +2709,7 @@ class Proj{
       ctx.shadowBlur=0;ctx.restore();
     } else {
       const sx=this.baseX+Math.cos(this.angle)*(this.big?9:6);
-      drawSpearhead(sx,this.tipY,this.angle,ts,false);
+      drawSpearhead(sx,this.tipY,this.angle,ts,headFlipped);
     }
 
     ctx.restore();
@@ -1923,13 +2717,16 @@ class Proj{
   hb(){
     const w=this.big?13:8;
     const sx=this.baseX+Math.cos(this.angle)*(this.big?9:6);
-    const rope={x:this.baseX-w/2,y:this.tipY,w,h:this.baseY-this.tipY};
-    const tip={x:sx-11,y:this.tipY-13,w:22,h:26};
+    const ropeTopY=this.down?this.baseY:this.tipY;
+    const ropeLen=Math.abs(this.tipY-this.baseY);
+    const rope={x:this.baseX-w/2,y:ropeTopY,w,h:ropeLen};
+    const tip=this.down
+      ?{x:sx-11,y:this.tipY-13,w:22,h:26}
+      :{x:sx-11,y:this.tipY-13,w:22,h:26};
     if(dualShot){
-      const ropeLen=this.baseY-this.tipY;
-      const midY=this.tipY+ropeLen*.5;
+      const midY=ropeTopY+ropeLen*.5;
       const mx=this.baseX+Math.cos(this.angle+Math.PI)*(this.big?9:6);
-      return{rope,tip,mid:{x:mx-11,y:midY-26,w:22,h:26}};
+      return{rope,tip,mid:{x:mx-11,y:midY-13,w:22,h:26}};
     }
     return{rope,tip};
   }
@@ -2149,6 +2946,50 @@ function bombAll(){
 // ═══════════════════════════════════════════════════
 // PARTICLE
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// GROUND CRACK — mızrak çarpma efekti
+// ═══════════════════════════════════════════════════
+class GroundCrack{
+  constructor(x,y){
+    this.x=x; this.y=y;
+    this.life=28; this.ml=28;
+    // 5-8 adet çatlak çizgisi
+    this.cracks=Array.from({length:6},(_,i)=>{
+      const ang=(Math.PI*0.85)+(i/6)*Math.PI*0.3+(Math.random()-.5)*0.4;
+      const len=12+Math.random()*22;
+      const branches=Math.random()<0.5?[{
+        ang:ang+(Math.random()-.5)*0.8,
+        len:len*0.45,
+        start:0.5+Math.random()*0.3
+      }]:[];
+      return{ang,len,branches};
+    });
+  }
+  update(){this.life--;}
+  draw(){
+    const a=Math.min(1,this.life/this.ml);if(a<=0)return;
+    ctx.save();ctx.globalAlpha=a*0.85;
+    ctx.strokeStyle='#ff8800';ctx.lineWidth=1.5;ctx.lineCap='round';
+    ctx.shadowColor='#ff6600';ctx.shadowBlur=4*a;
+    for(const c of this.cracks){
+      const x2=this.x+Math.cos(c.ang)*c.len;
+      const y2=this.y+Math.sin(c.ang)*c.len;
+      ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(x2,y2);ctx.stroke();
+      for(const b of c.branches){
+        const bx=this.x+Math.cos(c.ang)*c.len*b.start;
+        const by=this.y+Math.sin(c.ang)*c.len*b.start;
+        ctx.beginPath();ctx.moveTo(bx,by);
+        ctx.lineTo(bx+Math.cos(b.ang)*b.len,by+Math.sin(b.ang)*b.len);ctx.stroke();
+      }
+    }
+    // çatlama merkezi parlak nokta
+    ctx.fillStyle='rgba(255,220,80,'+a*0.9+')';
+    ctx.shadowBlur=8*a;ctx.shadowColor='#ffcc00';
+    ctx.beginPath();sarc(this.x,this.y,3.5*a);ctx.fill();
+    ctx.shadowBlur=0;ctx.restore();ctx.globalAlpha=1;
+  }
+}
+
 class Part{
   constructor(x,y,c){
     this.x=x;this.y=y;
@@ -2854,10 +3695,12 @@ function drawPlatforms(){
 }
 
 function getLadderAt(x,y){
+  // Sadece X ekseninde yakınlığa bak — tırmanırken merdiven kaybolmasın.
+  // Zemin seviyesinde veya platform altındayken aktif olur.
   for(const p of platforms){
     const cx=p.x+p.w/2;
-    if(Math.abs(x-cx)<=18 && y>=p.y-4 && y<=FLOOR+6){
-      return {p,cx,topY:p.y,bottomY:FLOOR};
+    if(Math.abs(x-cx)<=20 && y>=p.y-8){
+      return {p, cx, topY:p.y, bottomY:FLOOR};
     }
   }
   return null;
@@ -3179,7 +4022,7 @@ function showMenu(){
   document.getElementById('goScore').style.display='none';
   document.getElementById('ov').style.display='flex';
   document.getElementById('mctrl').style.display='none';
-  switchTab('Play');refreshActivePlayerLabel();if(!lRaf)animLogo();
+  refreshActivePlayerLabel();if(!lRaf)animLogo();
 }
 function hideMenu(){
   document.getElementById('ov').style.display='none';
@@ -3227,7 +4070,7 @@ function showGameOver(){
       document.getElementById('goScore').innerHTML=`Skor: <b style="color:#ffd700">${score.toLocaleString()}</b> — Bölüm: ${level}`+(isNew?' 🏆<span style="color:#ffd700"> YENİ REKOR!</span>':'');
       document.getElementById('ov').style.display='flex';
       document.getElementById('mctrl').style.display='none';
-      switchTab('Play');if(!lRaf)animLogo();
+      if(!lRaf)animLogo();
     }
   }
   goAnim();
@@ -3383,6 +4226,7 @@ function loop(){
     level++;
     if(nextCfg.wi!==prevCfg.wi){
       SFX.levelup();
+      setBGMWorld(nextCfg.wi);
       const pn=typeof prevCfg.world.name==='object'?prevCfg.world.name[lang]:prevCfg.world.name;
       const nn=typeof nextCfg.world.name==='object'?nextCfg.world.name[lang]:nextCfg.world.name;
       showMap(prevCfg.world,nextCfg.world,`${nextCfg.world.vh} ${pn} → ${nn}`,()=>{
@@ -3409,10 +4253,23 @@ function fireNormal(){
   fireCooldown=quickfire>0?FIRE_CD_QUICK:FIRE_CD_BASE;
   lastShot=Date.now();
   if(player)player.fireT=14;
-  projs.push(new Proj(player.x,player.y+6,giantT>0));
+
+  // Mızrak: adamın baktığı yönde, boyunun yarısı kadar önüne çarpar
+  // Adamın boyu ~88px (scale 0.62 * ~142), yarısı ~44px → dünya coord ~50px ileri
+  const halfBody = 50;
+  const spearStartX = player.x + player.face * halfBody; // baktığı yönde ileri
+  const spearStartY = player.y + 44; // ayak hizasından başlar (görünmez)
+
+  const dwnProj = new Proj(spearStartX, spearStartY, giantT>0, true);
+  dwnProj._invisible = true; // çizilmeyecek
+  projs.push(dwnProj);
   SFX.fire();
   if(dualShot&&ap.length===0){
-    setTimeout(()=>{if(running&&player)projs.push(new Proj(player.x+20,player.y+6,giantT>0))},75);
+    setTimeout(()=>{if(running&&player){
+      const dwnProj2 = new Proj(player.x + player.face*halfBody + 20, player.y+44, giantT>0, true);
+      dwnProj2._invisible = true;
+      projs.push(dwnProj2);
+    }},75);
   }
 }
 function fireHook(){
@@ -3424,18 +4281,18 @@ function fireHook(){
 // START
 // ═══════════════════════════════════════════════════
 function startGame(){
+  const inp=document.getElementById('nameFirstInput');
+  const warn=document.getElementById('nameWarn');
+  const raw=inp?String(inp.value||'').trim():'';
+  if(raw){playerName=cleanPlayerName(raw);try{localStorage.setItem('pangPlayerName',playerName)}catch{}}
   if(!playerName||playerName==='PLAYER'){
-    const ov=document.getElementById('nameOv');
-    if(ov){ov.style.display='flex';setTimeout(()=>document.getElementById('nameFirstInput')?.focus(),80);return;}
+    if(warn)warn.textContent='Please enter your name!';
+    if(inp)inp.focus();
+    return;
   }
-  hideMenu();resumeAC();
-  const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  document.getElementById('mctrl').style.display=isTouch?'block':'none';
-  initGame();startBGM();
-  const w=WORLDS[0];
-  showMap(null,w,lang==='tr'?'İstanbul\'dan başlıyoruz! 🗺️':'Starting in Istanbul! 🗺️',()=>{
-    showTransition(w,()=>{running=true;rafGame=requestAnimationFrame(loop)});
-  });
+  if(warn)warn.textContent='';
+  // Karakter seçim ekranına geç
+  showCharSelect();
 }
 
 // ═══════════════════════════════════════════════════
@@ -3446,8 +4303,8 @@ addEventListener('keydown',e=>{
   if(e.key===' '){e.preventDefault();fireNormal()}
   if(e.key==='ArrowUp'||e.key==='w'){
     e.preventDefault();
-    // Near a ladder: Up climbs. Otherwise Up/W jumps.
-    if(player&&!getLadderAt(player.x,player.y+32))player.requestJump();
+    // Her zaman zıpla — merdivende de, platformda da
+    if(player)player.requestJump();
   }
   if(e.key==='ArrowDown'||e.key==='s')e.preventDefault();
 });
