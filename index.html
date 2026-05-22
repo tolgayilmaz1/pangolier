@@ -284,38 +284,48 @@ function resize(){
   const vw=window.innerWidth;
   const vh=window.innerHeight;
   const ctrlH=isTouch?180:0;
+  const availH=vh-ctrlH;
 
-  // Canvas görsel boyutu = tam ekran genişliği, yükseklik kontrol alanı hariç
-  const cw=vw;
-  const ch=vh-ctrlH;
+  // Aspect ratio koruyarak maksimum büyüklük
+  const scaleW=vw/GW;
+  const scaleH=availH/GH;
+  const s=Math.min(scaleW,scaleH);
+  const cw=Math.round(GW*s);
+  const ch=Math.round(GH*s);
 
-  // #gc tam ekranı kapsasın
+  // Canvas boyutu
+  C.style.width=cw+'px';
+  C.style.height=ch+'px';
+  C.style.position='absolute';
+  C.style.left=Math.round((vw-cw)/2)+'px';
+  C.style.top=Math.round((availH-ch)/2)+'px';
+
+  // #gc tam ekran
   const gc=document.getElementById('gc');
   gc.style.width=vw+'px';
-  gc.style.height=vh+'px';
+  gc.style.height=availH+'px';
   gc.style.position='fixed';
   gc.style.top='0';
   gc.style.left='0';
 
-  // Canvas: GW×GH mantıksal, görsel olarak cw×ch — tam stretch
-  C.style.width=cw+'px';
-  C.style.height=ch+'px';
-  C.style.position='absolute';
-  C.style.top='0';
-  C.style.left='0';
-
-  // Overlay'ler tam gc boyutunda
+  // Overlay'ler canvas boyutunda, canvas konumunda
+  const offL=Math.round((vw-cw)/2);
+  const offT=Math.round((availH-ch)/2);
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){el.style.width=vw+'px';el.style.height=vh+'px';}
+    if(el){
+      el.style.width=cw+'px';
+      el.style.height=ch+'px';
+      el.style.left=offL+'px';
+      el.style.top=offT+'px';
+    }
   });
 
-  // mctrl: alttan, tam genişlik
+  // mctrl altta
   const mc=document.getElementById('mctrl');
   if(mc){
     mc.style.width=vw+'px';
     mc.style.height=ctrlH+'px';
-    mc.style.top=(vh-ctrlH)+'px';
   }
 }
 resize();
