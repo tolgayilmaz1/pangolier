@@ -10,9 +10,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;touch-action:none;background:#000}
-body{display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace}
-#gc{position:relative;overflow:hidden;background:#000;flex-shrink:0}
-#gc canvas{display:block;touch-action:none}
+body{font-family:'Courier New',monospace}
+#gc{position:fixed;top:0;left:0;overflow:hidden;background:#000}
+#gc canvas{display:block;touch-action:none;position:absolute;top:0;left:0}
 #hud{position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.5));pointer-events:none;z-index:2}
 #hud span{color:#fff;font-size:12px;font-weight:bold;letter-spacing:1px}
 #elLives{font-size:14px}
@@ -54,7 +54,7 @@ body{display:flex;align-items:center;justify-content:center;font-family:'Courier
 #btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 0;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:6px;transition:transform .1s;width:100%;max-width:260px;-webkit-tap-highlight-color:transparent}
 #btnStart:active{transform:scale(.97)}
 /* MOBILE */
-#mctrl{position:absolute;bottom:0;left:0;right:0;height:190px;z-index:5;pointer-events:none;display:none;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%)}
+#mctrl{position:fixed;bottom:0;left:0;right:0;height:180px;z-index:5;pointer-events:none;display:none;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%)}
 .mbtn{width:68px;height:68px;border-radius:50%;border:2.5px solid rgba(255,255,255,.22);color:#fff;font-size:24px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;background:rgba(0,0,0,.40);display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s;-webkit-tap-highlight-color:transparent}
 .mbtn:active{background:rgba(255,255,255,.28);transform:scale(.92)}
 #mcLeft{position:absolute;left:8px;bottom:4px;display:flex;gap:6px}
@@ -157,9 +157,9 @@ body{display:flex;align-items:center;justify-content:center;font-family:'Courier
     <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:420px;margin:0 auto"></div>
     <div id="charDesc" style="margin-top:10px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:24px;padding:0 10px"></div>
   </div>
-  <!-- Sabit alt buton -->
-  <div style="flex-shrink:0;padding:10px;width:100%;text-align:center;background:linear-gradient(to top,rgba(3,3,20,1) 70%,transparent)">
-    <button id="btnCharStart" style="background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:14px 48px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 22px #ff475755;display:none;width:100%;max-width:260px">▶ START</button>
+  <!-- Sabit alt buton — her zaman görünür -->
+  <div style="flex-shrink:0;padding:8px 10px 12px;width:100%;text-align:center;background:linear-gradient(to top,rgba(3,3,20,1) 60%,transparent)">
+    <button id="btnCharStart" style="background:linear-gradient(135deg,#555,#333);color:#888;border:2px solid #444;padding:14px 0;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:default;border-radius:10px;width:100%;max-width:280px;transition:all .2s">▶ SELECT A HERO</button>
   </div>
 </div>
 
@@ -281,42 +281,47 @@ const G_BALLOON=0.09;  // original dreamy balloon float
 
 function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const ctrlH=isTouch?188:0;
   const vw=window.innerWidth;
   const vh=window.innerHeight;
-  const availH=vh-ctrlH;
+  const ctrlH=isTouch?180:0;
 
-  // Scale: ekranı tamamen doldur, aspect ratio koru
-  // Dikey telefon: genişlik kısıtlıysa genişliğe göre, yükseklik kısıtlıysa yüksekliğe göre
-  const s=Math.min(vw/GW, availH/GH);
-  const cw=Math.round(GW*s);
-  const ch=Math.round(GH*s);
+  // Canvas görsel boyutu = tam ekran genişliği, yükseklik kontrol alanı hariç
+  const cw=vw;
+  const ch=vh-ctrlH;
 
-  // Canvas ve #gc boyutu
+  // #gc tam ekranı kapsasın
+  const gc=document.getElementById('gc');
+  gc.style.width=vw+'px';
+  gc.style.height=vh+'px';
+  gc.style.position='fixed';
+  gc.style.top='0';
+  gc.style.left='0';
+
+  // Canvas: GW×GH mantıksal, görsel olarak cw×ch — tam stretch
   C.style.width=cw+'px';
   C.style.height=ch+'px';
-  C.style.position='';
-  C.style.left='';
-  C.style.top='';
+  C.style.position='absolute';
+  C.style.top='0';
+  C.style.left='0';
 
-  const gc=document.getElementById('gc');
-  gc.style.width=cw+'px';
-  gc.style.height=ch+'px';
-
-  // Overlay'ler #gc ile aynı boyut
+  // Overlay'ler tam gc boyutunda
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){el.style.width=cw+'px';el.style.height=ch+'px';}
+    if(el){el.style.width=vw+'px';el.style.height=vh+'px';}
   });
 
-  // mctrl: canvas genişliğinde, canvas altına yapışık
+  // mctrl: alttan, tam genişlik
   const mc=document.getElementById('mctrl');
-  if(mc){mc.style.width=cw+'px';}
+  if(mc){
+    mc.style.width=vw+'px';
+    mc.style.height=ctrlH+'px';
+    mc.style.top=(vh-ctrlH)+'px';
+  }
 }
 resize();
 addEventListener('resize',resize);
-addEventListener('orientationchange',()=>setTimeout(resize,350));
-if(screen.orientation)screen.orientation.addEventListener('change',()=>setTimeout(resize,350));
+addEventListener('orientationchange',()=>setTimeout(resize,300));
+if(screen.orientation)screen.orientation.addEventListener('change',()=>setTimeout(resize,300));
 
 // roundRect polyfill
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -1200,7 +1205,12 @@ function buildCharSelect(){
     card.onclick = () => {
       selectedChar = ch;
       desc.textContent = ch.desc;
-      btnStart.style.display = 'block';
+      btnStart.style.background = 'linear-gradient(135deg,#ff4757,#c0392b)';
+      btnStart.style.color = '#fff';
+      btnStart.style.border = '2px solid transparent';
+      btnStart.style.cursor = 'pointer';
+      btnStart.style.boxShadow = '0 0 22px #ff475755';
+      btnStart.textContent = '▶ START';
       // highlight
       grid.querySelectorAll('div').forEach(c => c.style.borderColor='rgba(255,255,255,.12)');
       card.style.borderColor = '#ffd700';
