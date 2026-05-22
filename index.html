@@ -37,7 +37,7 @@ body{font-family:'Courier New',monospace}
 #btnNameContinue{margin-top:14px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 32px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755}
 #nameWarn{height:18px;color:#ff7675;font-size:10px;margin-top:8px}
 /* OVERLAY */
-#ov{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#ov{position:fixed;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 8px;z-index:10;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 @media(max-height:600px){#ov{padding-top:4px}}
 
 #ov>*{flex-shrink:0}
@@ -51,7 +51,7 @@ body{font-family:'Courier New',monospace}
 .tb:hover,.tb.on{background:#ff4757;color:#fff;border-color:#ff4757}
 .panel{display:none;width:min(320px,92vw);text-align:center}
 .panel.on{display:block}
-#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 0;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:6px;transition:transform .1s;width:100%;max-width:260px;-webkit-tap-highlight-color:transparent}
+#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 0;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:6px;transition:transform .1s;width:min(280px,90%);max-width:300px;-webkit-tap-highlight-color:transparent}
 #btnStart:active{transform:scale(.97)}
 /* MOBILE */
 #mctrl{position:fixed;bottom:0;left:0;right:0;height:180px;z-index:5;pointer-events:none;display:none;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%)}
@@ -60,12 +60,12 @@ body{font-family:'Courier New',monospace}
 #mcLeft{position:absolute;left:8px;bottom:4px;display:flex;gap:6px}
 #mcRight{position:absolute;right:8px;bottom:4px;display:flex;gap:6px}
 /* MAP */
-#mapOv{position:absolute;inset:0;background:#030310;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center}
+#mapOv{position:fixed;background:#030310;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center}
 #mapCanvas{border:1px solid #1a1a3a;border-radius:4px}
 #mapSub{color:#ffd700;font-size:12px;margin-top:10px;letter-spacing:2px;text-align:center}
 /* TRANSITION */
-#trans{position:absolute;inset:0;background:#000;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff}
-#transCanvas{margin-bottom:14px}
+#trans{position:fixed;background:linear-gradient(180deg,#030310,#0a0a20);z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px}
+#transCanvas{margin-bottom:10px;max-width:90%;border-radius:12px}
 #transTitle{font-size:18px;color:#ffd700;letter-spacing:2px;margin-bottom:8px;text-align:center}
 #transText{font-size:12px;color:#aaa;max-width:300px;line-height:1.9;text-align:center}
 /* HI SCORE */
@@ -117,13 +117,13 @@ body{font-family:'Courier New',monospace}
   </div>
 
   <div id="trans">
-    <canvas id="transCanvas" width="220" height="130"></canvas>
+    <canvas id="transCanvas" width="300" height="180"></canvas>
     <div id="transTitle"></div>
     <div id="transText"></div>
   </div>
 
   <!-- CONTROLLER SEÇİM EKRANI -->
-<div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+<div id="ctrlSelectOv" style="display:none;position:fixed;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700;text-align:center">🎮 CHOOSE CONTROLS</div>
   <div style="color:#666;font-size:10px;letter-spacing:2px;text-align:center">HOW DO YOU WANT TO PLAY?</div>
   <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px">
@@ -146,15 +146,15 @@ body{font-family:'Courier New',monospace}
 </div>
 
 <!-- KARAKTER SEÇİM EKRANI -->
-<div id="charSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden">
+<div id="charSelectOv" style="display:none;position:fixed;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden">
   <!-- Sabit başlık -->
-  <div style="flex-shrink:0;text-align:center;padding:14px 10px 6px">
+  <div style="flex-shrink:0;text-align:center;padding:10px 10px 4px">
     <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 18px #ffd700">⚔ CHOOSE YOUR HERO ⚔</div>
     <div style="color:#666;font-size:10px;letter-spacing:2px;margin-top:3px">SELECT YOUR FIGHTER</div>
   </div>
   <!-- Kaydırılabilir orta alan -->
-  <div style="flex:1;overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch;padding:4px 10px 0">
-    <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:420px;margin:0 auto"></div>
+  <div style="flex:1;overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch;padding:4px 8px 0">
+    <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:100%;margin:0 auto;width:100%"></div>
     <div id="charDesc" style="margin-top:10px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:24px;padding:0 10px"></div>
   </div>
   <!-- Sabit alt buton — her zaman görünür -->
@@ -164,10 +164,10 @@ body{font-family:'Courier New',monospace}
 </div>
 
 <div id="ov">
-    <canvas id="logo" width="320" height="110" style="max-width:min(88%,280px);max-height:min(90px,15vh);margin-bottom:3px"></canvas>
+    <canvas id="logo" width="480" height="115" style="width:min(100%,480px);height:auto;margin-bottom:4px;display:block;margin-left:auto;margin-right:auto"></canvas>
     <div id="langBar" style="display:flex;gap:8px;margin-bottom:4px">
-      <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇹🇷 TR</button>
-      <button id="btnEN" onclick="setLang('en')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇬🇧 EN</button>
+      <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:5px 10px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇹🇷 TR</button>
+      <button id="btnEN" onclick="setLang('en')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:5px 10px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇬🇧 EN</button>
     </div>
     <div id="goTitle" style="display:none;font-size:18px;color:#ff4757;font-weight:bold;letter-spacing:2px;margin-bottom:1px"></div>
     <div id="goScore" style="display:none;font-size:12px;color:#aaa;margin-bottom:8px"></div>
@@ -176,7 +176,7 @@ body{font-family:'Courier New',monospace}
       <button class="tb" id="tbCred">ℹ YAPIMCILAR</button>
     </div>
     <div style="margin:6px 0 4px">
-      <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ" style="background:#0d0d22;color:#fff;border:1px solid #ff475766;padding:6px 10px;font-family:'Courier New',monospace;font-size:13px;border-radius:6px;width:180px;text-align:center;outline:none;letter-spacing:1px">
+      <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ" style="background:#0d0d22;color:#fff;border:1px solid #ff475766;padding:6px 10px;font-family:'Courier New',monospace;font-size:13px;border-radius:6px;width:min(200px,80%);text-align:center;outline:none;letter-spacing:1px">
       <div id="nameWarn" style="color:#ff4757;font-size:10px;margin-top:3px;min-height:10px"></div>
     </div>
     <div id="activePlayerName" style="margin:1px 0;color:#74b9ff;font-size:10px;letter-spacing:1px;font-weight:bold"></div>
@@ -308,16 +308,19 @@ function resize(){
   gc.style.top='0';
   gc.style.left='0';
 
-  // Overlay'ler canvas boyutunda, canvas konumunda
+  // Overlay'ler canvas ile aynı boyut ve konum
   const offL=Math.round((vw-cw)/2);
   const offT=Math.round((availH-ch)/2);
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
+      el.style.position='fixed';
       el.style.width=cw+'px';
       el.style.height=ch+'px';
       el.style.left=offL+'px';
       el.style.top=offT+'px';
+      el.style.right='auto';
+      el.style.bottom='auto';
     }
   });
 
@@ -496,56 +499,92 @@ function drawPangolin(ctx2,cx,cy,frame){
 }
 
 function animLogo(){
-  lc.clearRect(0,0,320,110);
+  // Canvas boyutunu her frame dinamik al
+  const LW=logoEl.width, LH=logoEl.height;
+  const cx=LW/2, cy=LH/2;
+  lc.clearRect(0,0,LW,LH);
   const lt=lf*.04;
 
-  // ── Floating balloons ABOVE letters ──────────────
-  const BDATA=[
-    {col:'#ff4757',s:'#c0392b',x:26, baseY:14,r:10,phase:0   },
-    {col:'#ffa502',s:'#c47400',x:60, baseY:12,r:9, phase:.8  },
-    {col:'#ffd700',s:'#c8a000',x:100,baseY:15,r:10,phase:1.4 },
-    {col:'#2ed573',s:'#1a8a45',x:145,baseY:10,r:9, phase:2.1 },
-    {col:'#74b9ff',s:'#0055aa',x:188,baseY:14,r:10,phase:2.7 },
-    {col:'#a29bfe',s:'#6c5ce7',x:228,baseY:12,r:9, phase:3.3 },
-    {col:'#fd79a8',s:'#c0547c',x:268,baseY:14,r:9, phase:3.9 },
+  // ── Harf pozisyonlarını merkeze göre hesapla ──
+  // 9 harf: P(büyük) A N G O L I E R(büyük)
+  // Büyük P ve R her biri ~40px, küçük harfler ~28px arası
+  const LETTERS=[
+    {l:'P',big:true, col:'#ff4757'},
+    {l:'A',big:false,col:'#ffa502'},
+    {l:'N',big:false,col:'#ffd700'},
+    {l:'G',big:false,col:'#2ed573'},
+    {l:'O',big:false,col:'#74b9ff'},
+    {l:'L',big:false,col:'#a29bfe'},
+    {l:'I',big:false,col:'#fd79a8'},
+    {l:'E',big:false,col:'#ff6b35'},
+    {l:'R',big:true, col:'#00cec9'},
   ];
-  BDATA.forEach(b=>{
-    const by=b.baseY+Math.sin(lt+b.phase)*3.5;
-    lc.fillStyle='rgba(0,0,0,.12)';
-    lc.beginPath();lc.ellipse(b.x,36,b.r*.5,3,0,0,Math.PI*2);lc.fill();
-    const bg=lc.createRadialGradient(b.x-b.r*.3,by-b.r*.3,b.r*.1,b.x,by,b.r);
-    bg.addColorStop(0,'#fff');bg.addColorStop(.25,b.col);bg.addColorStop(1,b.s);
-    lc.fillStyle=bg;lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.fill();
-    lc.strokeStyle=b.s;lc.lineWidth=1.2;lc.beginPath();lc.arc(b.x,by,b.r,0,Math.PI*2);lc.stroke();
-    lc.fillStyle='rgba(255,255,255,.35)';lc.beginPath();lc.ellipse(b.x-b.r*.3,by-b.r*.3,b.r*.22,b.r*.13,-.5,0,Math.PI*2);lc.fill();
-    lc.fillStyle=b.s;lc.beginPath();lc.arc(b.x,by+b.r,2,0,Math.PI*2);lc.fill();
-    lc.strokeStyle=b.s+'88';lc.lineWidth=.8;
-    lc.beginPath();lc.moveTo(b.x,by+b.r+2);lc.lineTo(b.x,38);lc.stroke();
-  });
+  // Her harfin x pozisyonunu ölç
+  const sp=33; // küçük harf aralığı
+  // Toplam genişlik: P(büyük sola çıkıntı) + 7*sp + R(büyük sağa)
+  // Yaklaşık toplam: 8*33 = 264px
+  const totalW=8*sp;
+  const startX=cx-totalW/2;
 
-  // ── PANGOLIER letters ─────────────────────────────
-  const sx2=8,sp=34;
+  // Harf x'leri
+  const xs=LETTERS.map((_,i)=>startX+i*sp);
+
+  // ── Balonlar — her harfin üstünde ────────────────
+  const bColors=[
+    {col:'#ff4757',s:'#c0392b'},{col:'#ffa502',s:'#c47400'},
+    {col:'#ffd700',s:'#c8a000'},{col:'#2ed573',s:'#1a8a45'},
+    {col:'#74b9ff',s:'#0055aa'},{col:'#a29bfe',s:'#6c5ce7'},
+    {col:'#fd79a8',s:'#c0547c'},
+  ];
+  // 7 balon — harflerin üstüne dağıt
+  for(let i=0;i<7;i++){
+    const bc=bColors[i];
+    const bx=xs[i+1]; // A'dan I'ya kadar üste
+    const r=9+i%2;
+    const by=12+Math.sin(lt+(i*.9))*4;
+    // İp gölgesi
+    lc.fillStyle='rgba(0,0,0,.10)';
+    lc.beginPath();lc.ellipse(bx,38,r*.5,2.5,0,0,Math.PI*2);lc.fill();
+    // Balon
+    const bg=lc.createRadialGradient(bx-r*.3,by-r*.3,r*.1,bx,by,r);
+    bg.addColorStop(0,'#fff');bg.addColorStop(.25,bc.col);bg.addColorStop(1,bc.s);
+    lc.fillStyle=bg;
+    lc.beginPath();lc.arc(bx,by,r,0,Math.PI*2);lc.fill();
+    lc.strokeStyle=bc.s;lc.lineWidth=1;
+    lc.beginPath();lc.arc(bx,by,r,0,Math.PI*2);lc.stroke();
+    // Parıltı
+    lc.fillStyle='rgba(255,255,255,.4)';
+    lc.beginPath();lc.ellipse(bx-r*.3,by-r*.3,r*.22,r*.14,-.5,0,Math.PI*2);lc.fill();
+    // İp düğümü
+    lc.fillStyle=bc.s;lc.beginPath();lc.arc(bx,by+r,2,0,Math.PI*2);lc.fill();
+    // İp
+    lc.strokeStyle=bc.s+'99';lc.lineWidth=.9;
+    lc.beginPath();lc.moveTo(bx,by+r+2);lc.lineTo(bx,40);lc.stroke();
+  }
+
+  // ── PANGOLIER harfleri ────────────────────────────
+  lc.textAlign='center';lc.textBaseline='middle';
   for(let i=0;i<9;i++){
-    const x=sx2+i*sp+14, y=54+Math.sin(lt+i*1.1)*3.5;
-    lc.shadowColor=LC[i];lc.shadowBlur=10+Math.sin(lt+i)*3;
-    lc.fillStyle=LC[i];
-    const isBig=(i===0||i===8);
-    const baseSize=isBig?88:24;
-    const yOff=isBig?-18:0;
-    lc.font=`bold ${baseSize+Math.sin(lt+i*.9)*2}px 'Courier New'`;
-    lc.textAlign='center';lc.textBaseline='middle';
-    lc.fillText(LL[i],x,y+yOff);
+    const {l,big,col}=LETTERS[i];
+    const x=xs[i];
+    const y=62+Math.sin(lt+i*1.1)*3;
+    const sz=big?(72+Math.sin(lt+i*.9)*2):(24+Math.sin(lt+i*.9)*1.5);
+    const yOff=big?-14:0;
+    lc.shadowColor=col;lc.shadowBlur=10+Math.sin(lt+i)*3;
+    lc.fillStyle=col;
+    lc.font=`bold ${sz}px 'Courier New', monospace`;
+    lc.fillText(l,x,y+yOff);
   }
   lc.shadowBlur=0;
 
-  // ── tiny pangolin below ───────────────────────────
-  lc.save();lc.scale(.55,.55);
-  drawPangolin(lc,290,158,lf);
+  // ── Pangolin maskotu ──────────────────────────────
+  lc.save();lc.scale(.5,.5);
+  drawPangolin(lc,cx/.5+10,172,lf);
   lc.restore();
 
-  // tagline
-  lc.fillStyle='#444';lc.font='8px Courier New';lc.textAlign='center';
-  lc.fillText(lang==='tr'?'Zırhlı Balon Avcısı':'The Armored Balloon Hunter',155,100);
+  // ── Tagline ───────────────────────────────────────
+  lc.fillStyle='#555';lc.font='9px Courier New';lc.textAlign='center';lc.textBaseline='middle';
+  lc.fillText(lang==='tr'?'Zırhlı Balon Avcısı':'The Armored Balloon Hunter',cx,104);
 
   lf++;lRaf=requestAnimationFrame(animLogo);
 }
@@ -1203,15 +1242,24 @@ function buildCharSelect(){
   const btnStart = document.getElementById('btnCharStart');
   grid.innerHTML = '';
 
+  // Emoji tabanlı kartlar — canvas yok, anında render
   CHAR_DEFS.forEach((ch, i) => {
     const card = document.createElement('div');
-    card.style.cssText = `background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.12);
-      border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;
-      display:flex;flex-direction:column;align-items:center;gap:4px;`;
+    card.style.cssText = `background:rgba(255,255,255,.06);border:2.5px solid rgba(255,255,255,.15);
+      border-radius:12px;padding:12px 8px 8px;text-align:center;cursor:pointer;transition:all .18s;
+      display:flex;flex-direction:column;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;`;
+
+    // Karakter renk arka planı
+    const bgCol = ch.shirt1+'33';
     card.innerHTML = `
-      <canvas width="80" height="80" id="charPrev${i}" style="border-radius:6px;background:rgba(0,0,0,.3)"></canvas>
-      <div style="color:#ffd700;font-size:9px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace">${ch.name}</div>
+      <div style="width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,${ch.shirt1}55,${ch.shirt3}cc);
+        display:flex;align-items:center;justify-content:center;font-size:36px;
+        border:2px solid ${ch.cape1}88;box-shadow:0 0 16px ${ch.shirt1}44">
+        ${ch.emoji}
+      </div>
+      <div style="color:#ffd700;font-size:9px;font-weight:bold;letter-spacing:1.5px;font-family:'Courier New',monospace">${ch.name}</div>
     `;
+
     card.onclick = () => {
       selectedChar = ch;
       desc.textContent = ch.desc;
@@ -1221,22 +1269,22 @@ function buildCharSelect(){
       btnStart.style.cursor = 'pointer';
       btnStart.style.boxShadow = '0 0 22px #ff475755';
       btnStart.textContent = '▶ START';
-      // highlight
-      grid.querySelectorAll('div').forEach(c => c.style.borderColor='rgba(255,255,255,.12)');
+      grid.querySelectorAll('div[data-card]').forEach(c=>{
+        c.style.borderColor='rgba(255,255,255,.15)';
+        c.style.background='rgba(255,255,255,.06)';
+      });
       card.style.borderColor = '#ffd700';
-      card.style.background = 'rgba(255,215,0,.12)';
+      card.style.background = `rgba(255,215,0,.14)`;
+      card.style.boxShadow = `0 0 18px ${ch.shirt1}55`;
     };
-    card.onmouseenter = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.10)'; } };
-    card.onmouseleave = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.05)'; } };
+    card.dataset.card = i;
+    card.onmouseenter = () => { if(selectedChar!==ch) card.style.background='rgba(255,255,255,.12)'; };
+    card.onmouseleave = () => { if(selectedChar!==ch) card.style.background='rgba(255,255,255,.06)'; };
     grid.appendChild(card);
-
-    // karakter önizlemesi çiz
-    setTimeout(() => drawCharPreview(i, ch), 50);
   });
 
   // ilk kartı seç
   grid.children[0] && grid.children[0].click();
-
   document.getElementById('btnCharStart').onclick = startWithChar;
 }
 
@@ -1244,10 +1292,10 @@ function drawCharPreview(i, ch){
   const cvs = document.getElementById('charPrev'+i);
   if(!cvs) return;
   const c = cvs.getContext('2d');
-  c.clearRect(0,0,80,80);
+  c.clearRect(0,0,120,130);
   c.save();
-  c.translate(40, 68);
-  c.scale(0.38, 0.38);
+  c.translate(60, 112);
+  c.scale(0.56, 0.56);
 
   // Mini karakter çiz — gövde + baş + pelerin
   // PELERIN
@@ -4118,15 +4166,28 @@ const transEl=document.getElementById('trans');
 const tCvs=document.getElementById('transCanvas'),tctx=tCvs.getContext('2d');
 let transRaf=null,transFrame=0;
 function drawVehicle(vh,fr){
-  tctx.clearRect(0,0,220,130);
-  const t=fr*.05,x=45+Math.sin(t)*10,y=62+Math.sin(t*1.6)*6;
-  tctx.font='52px serif';tctx.textAlign='center';tctx.textBaseline='middle';
-  tctx.save();tctx.translate(x,y);tctx.rotate(Math.sin(t*.9)*.1);tctx.fillText(vh,0,0);tctx.restore();
-  for(let i=5;i>=0;i--){
-    tctx.globalAlpha=(6-i)/12;tctx.fillStyle='#ffd700';
-    tctx.beginPath();tctx.arc(x-24-i*9,y+Math.sin(t+i)*5,3-i*.35,0,TAU);tctx.fill();
+  const W=tCvs.width,H=tCvs.height;
+  tctx.clearRect(0,0,W,H);
+  const t=fr*.05;
+  const cx=W/2, cy=H/2+Math.sin(t*1.6)*5;
+  // Egzoz/iz partiküller (araçtan geride)
+  for(let i=8;i>=0;i--){
+    const px=cx-55-i*14+Math.sin(t+i*.7)*4;
+    const py=cy+Math.sin(t*1.2+i)*6;
+    const r=Math.max(0.5,(7-i)*.7);
+    tctx.globalAlpha=(8-i)/18;
+    tctx.fillStyle=i<3?'#fff':'#aaa';
+    tctx.beginPath();tctx.arc(px,py,r,0,Math.PI*2);tctx.fill();
   }
   tctx.globalAlpha=1;
+  // Araç/emoji ortalı, büyük, hafif sallanma
+  tctx.font='72px serif';
+  tctx.textAlign='center';tctx.textBaseline='middle';
+  tctx.save();
+  tctx.translate(cx,cy);
+  tctx.rotate(Math.sin(t*.8)*.04);
+  tctx.fillText(vh,0,0);
+  tctx.restore();
 }
 function showTransition(world,done){
   transEl.style.display='flex';
