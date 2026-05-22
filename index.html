@@ -2,13 +2,17 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>PANGOLIER - Premium Walk</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:100vh;height:100%;overflow:hidden;touch-action:none;font-family:'Courier New',monospace}
-#gc{position:relative}
-canvas{display:block}
+html{height:100%;height:100dvh}
+body{background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;width:100vw;height:100dvh;overflow:hidden;touch-action:none;font-family:'Courier New',monospace}
+#gc{position:relative;flex-shrink:0}
+canvas{display:block;touch-action:none}
 #hud{position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.5));pointer-events:none;z-index:2}
 #hud span{color:#fff;font-size:12px;font-weight:bold;letter-spacing:1px}
 #elLives{font-size:14px}
@@ -33,7 +37,7 @@ canvas{display:block}
 #btnNameContinue{margin-top:14px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 32px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755}
 #nameWarn{height:18px;color:#ff7675;font-size:10px;margin-top:8px}
 /* OVERLAY */
-#ov{position:absolute;inset:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;box-sizing:border-box}
+#ov{position:absolute;inset:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;-webkit-overflow-scrolling:touch}
 @media(max-height:600px){#ov{justify-content:flex-start;padding-top:8px;padding-bottom:12px}}
 
 #ov>*{flex-shrink:0}
@@ -81,15 +85,30 @@ canvas{display:block}
   <div id="tut" style="opacity:0"><span id="tutTxt"></span></div>
 
   <div id="mctrl">
-    <!-- Virtual Joystick (sol alt) -->
-    <canvas id="joyCanvas" width="160" height="160" style="position:absolute;left:10px;bottom:8px;pointer-events:all;opacity:0.92"></canvas>
-    <!-- Sağ taraf: Sadece büyük ateş butonu + zıpla butonu -->
-    <div id="mcRight" style="position:absolute;right:14px;bottom:8px;display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center">
-      <button class="mbtn" id="btnUp" style="border-color:rgba(255,200,0,.7);color:#ffd700;width:68px;height:68px;font-size:28px;border-radius:50%">⬆</button>
-      <button class="mbtn" id="btnFire" style="border-color:rgba(255,71,87,.9);color:#ff4757;font-size:34px;width:84px;height:84px;border-radius:50%;background:rgba(255,71,87,.18);box-shadow:0 0 18px rgba(255,71,87,.5)">🎯</button>
+    <!-- JOYSTICK MODU: Sol joystick + sağda zıpla/ateş -->
+    <div id="joyCvsWrap" style="display:block">
+      <canvas id="joyCanvas" width="160" height="160" style="position:absolute;left:10px;bottom:8px;pointer-events:all;opacity:0.92"></canvas>
+      <div style="position:absolute;right:12px;bottom:8px;display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center">
+        <!-- Zıplama butonu: yukarı ok ikonu -->
+        <button id="btnUp" style="width:64px;height:64px;border-radius:50%;border:2.5px solid rgba(255,215,0,.7);background:rgba(0,0,0,.4);color:#ffd700;font-size:30px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🦘</button>
+        <!-- Ateş butonu -->
+        <button id="btnFire" style="width:80px;height:80px;border-radius:50%;border:2.5px solid rgba(255,71,87,.9);background:rgba(255,71,87,.18);box-shadow:0 0 18px rgba(255,71,87,.5);color:#ff4757;font-size:32px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🎯</button>
+      </div>
     </div>
-    <!-- Merdiven aşağı butonu - sol taraf ortası -->
-    <button class="mbtn" id="btnDown" style="position:absolute;left:180px;bottom:20px;border-color:rgba(116,185,255,.6);color:#74b9ff;width:58px;height:58px;font-size:22px;border-radius:50%;pointer-events:all">⬇</button>
+
+    <!-- D-PAD MODU: Sol←→ + sağda zıpla/ateş -->
+    <div id="dpadWrap" style="display:none;position:absolute;inset:0;pointer-events:none">
+      <!-- Sol: ← → butonlar -->
+      <div style="position:absolute;left:8px;bottom:12px;display:flex;gap:8px;pointer-events:all;align-items:center">
+        <button id="btnLeft"  style="width:72px;height:72px;border-radius:14px;border:2.5px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);color:#fff;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">◀</button>
+        <button id="btnRight" style="width:72px;height:72px;border-radius:14px;border:2.5px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);color:#fff;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">▶</button>
+      </div>
+      <!-- Sağ: zıpla + ateş -->
+      <div style="position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center">
+        <button id="btnUpD"   style="width:64px;height:64px;border-radius:50%;border:2.5px solid rgba(255,215,0,.7);background:rgba(0,0,0,.4);color:#ffd700;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🦘</button>
+        <button id="btnFireD" style="width:80px;height:80px;border-radius:50%;border:2.5px solid rgba(255,71,87,.9);background:rgba(255,71,87,.18);box-shadow:0 0 18px rgba(255,71,87,.5);color:#ff4757;font-size:32px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🎯</button>
+      </div>
+    </div>
   </div>
 
   <div id="mapOv">
@@ -103,7 +122,32 @@ canvas{display:block}
     <div id="transText"></div>
   </div>
 
-  <!-- KARAKTER SEÇİM EKRANI -->
+  <!-- CONTROLLER SEÇİM EKRANI -->
+<div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px">
+  <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700">🎮 CHOOSE CONTROLS</div>
+  <div style="color:#666;font-size:10px;letter-spacing:2px">HOW DO YOU WANT TO PLAY?</div>
+  <div style="display:flex;gap:18px;margin-top:8px">
+    <!-- Joystick seçeneği -->
+    <div onclick="startWithController('joystick')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+         onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
+         onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
+      <div style="font-size:40px;margin-bottom:8px">🕹️</div>
+      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">JOYSTICK</div>
+      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Analog stick<br>+ fire button</div>
+    </div>
+    <!-- D-Pad seçeneği -->
+    <div onclick="startWithController('dpad')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+         onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
+         onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
+      <div style="font-size:40px;margin-bottom:8px">⬅️➡️</div>
+      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">D-PAD</div>
+      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Left/Right arrows<br>+ jump + fire</div>
+    </div>
+  </div>
+  <div style="color:#444;font-size:9px;font-family:'Courier New',monospace;margin-top:4px">Keyboard always works on desktop</div>
+</div>
+
+<!-- KARAKTER SEÇİM EKRANI -->
 <div id="charSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto">
   <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;margin-bottom:6px;text-shadow:0 0 18px #ffd700">⚔ CHOOSE YOUR HERO ⚔</div>
   <div style="color:#888;font-size:10px;letter-spacing:2px;margin-bottom:14px">SELECT YOUR FIGHTER</div>
@@ -231,11 +275,28 @@ const G_BALLOON=0.09;  // original dreamy balloon float
 function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   const ctrlH=isTouch?190:0;
-  const s=Math.min(innerWidth/GW,(innerHeight-ctrlH-2)/GH,1.6);
-  C.style.width=GW*s+'px'; C.style.height=GH*s+'px';
-  document.getElementById('gc').style.width=GW*s+'px';
+  const vw=window.innerWidth;
+  const vh=window.innerHeight-ctrlH;
+  // Tam ekranı doldur — max sınır yok, aspect ratio koru
+  const s=Math.min(vw/GW, vh/GH);
+  const cw=Math.round(GW*s);
+  const ch=Math.round(GH*s);
+  C.style.width=cw+'px';
+  C.style.height=ch+'px';
+  const gc=document.getElementById('gc');
+  gc.style.width=cw+'px';
+  gc.style.height=ch+'px';
+  // Overlay'leri de aynı boyuta getir
+  ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.width=cw+'px';el.style.height=ch+'px';}
+  });
 }
-resize(); addEventListener('resize',resize);
+resize();
+addEventListener('resize',resize);
+// Android'de adres çubuğu kaybolunca tekrar hesapla
+addEventListener('orientationchange',()=>setTimeout(resize,300));
+screen.orientation&&screen.orientation.addEventListener('change',()=>setTimeout(resize,300));
 
 // roundRect polyfill
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -1250,11 +1311,33 @@ function hideCharSelect(){
   document.getElementById('charSelectOv').style.display = 'none';
 }
 
+let selectedController = 'joystick'; // 'joystick' veya 'dpad'
+
 function startWithChar(){
   hideCharSelect();
+  showControllerSelect();
+}
+
+function showControllerSelect(){
+  const ov = document.getElementById('ctrlSelectOv');
+  ov.style.display='flex';
+}
+function hideControllerSelect(){
+  const ov = document.getElementById('ctrlSelectOv');
+  ov.style.display='none';
+}
+
+function startWithController(type){
+  selectedController = type;
+  hideControllerSelect();
   hideMenu(); resumeAC();
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  document.getElementById('mctrl').style.display=isTouch?'block':'none';
+  // Controller tipine göre doğru UI göster
+  if(isTouch){
+    document.getElementById('mctrl').style.display='block';
+    document.getElementById('joyCvsWrap').style.display = type==='joystick'?'block':'none';
+    document.getElementById('dpadWrap').style.display   = type==='dpad'?'flex':'none';
+  }
   initGame(); startBGM(0);
   const w=WORLDS[0];
   showMap(null,w,lang==='tr'?'İstanbul\'dan başlıyoruz! 🗺️':'Starting in Istanbul! 🗺️',()=>{
@@ -4411,34 +4494,37 @@ joyCvs.addEventListener('touchend',e=>{
 },{passive:false});
 joyCvs.addEventListener('touchcancel',()=>joyReset());
 
-// Ateş butonu — hem touch hem mouse
-const btnFire=document.getElementById('btnFire');
-btnFire.addEventListener('touchstart',e=>{e.preventDefault();fireNormal();},{passive:false});
-btnFire.addEventListener('mousedown',()=>fireNormal());
-
-// Zıpla butonu
-document.getElementById('btnUp').addEventListener('touchstart',e=>{
-  e.preventDefault();
-  if(player)player.requestJump();
-},{passive:false});
-document.getElementById('btnUp').addEventListener('mousedown',()=>{
-  if(player)player.requestJump();
-});
-
-// Merdiven aşağı butonu
-const btnDown=document.getElementById('btnDown');
-if(btnDown){
-  btnDown.addEventListener('touchstart',e=>{e.preventDefault();keys.ArrowDown=true},{passive:false});
-  btnDown.addEventListener('touchend',e=>{e.preventDefault();keys.ArrowDown=false},{passive:false});
-  btnDown.addEventListener('touchcancel',e=>{e.preventDefault();keys.ArrowDown=false},{passive:false});
-  btnDown.addEventListener('mousedown',()=>keys.ArrowDown=true);
-  btnDown.addEventListener('mouseup',()=>keys.ArrowDown=false);
-  btnDown.addEventListener('mouseleave',()=>keys.ArrowDown=false);
+// ── JOYSTICK MODU butonları ──
+function addJumpBtn(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.addEventListener('touchstart',e=>{e.preventDefault();if(player)player.requestJump();},{passive:false});
+  el.addEventListener('mousedown',()=>{if(player)player.requestJump();});
 }
+function addFireBtn(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.addEventListener('touchstart',e=>{e.preventDefault();fireNormal();},{passive:false});
+  el.addEventListener('mousedown',()=>fireNormal());
+}
+addJumpBtn('btnUp');
+addFireBtn('btnFire');
 
-// Dokunmatik cihazlarda kontrolleri göster
-const isT=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-joyCvs.style.display=isT?'block':'none';
+// ── D-PAD MODU butonları ──
+function holdBtn2(id,k){
+  const el=document.getElementById(id);if(!el)return;
+  el.addEventListener('touchstart',e=>{e.preventDefault();keys[k]=true;},{passive:false});
+  el.addEventListener('touchend',  e=>{e.preventDefault();keys[k]=false;},{passive:false});
+  el.addEventListener('touchcancel',e=>{e.preventDefault();keys[k]=false;},{passive:false});
+  el.addEventListener('mousedown', ()=>keys[k]=true);
+  el.addEventListener('mouseup',   ()=>keys[k]=false);
+  el.addEventListener('mouseleave',()=>keys[k]=false);
+}
+holdBtn2('btnLeft','ArrowLeft');
+holdBtn2('btnRight','ArrowRight');
+addJumpBtn('btnUpD');
+addFireBtn('btnFireD');
+
+// Dokunmatik: controller seçilince doğru wrap göster (startWithController'da yapılıyor)
+// Sayfa yüklendiğinde ikisi de gizli, oyun başlayınca açılır.
 </script>
 </body>
 </html>
