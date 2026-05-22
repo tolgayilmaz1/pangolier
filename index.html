@@ -9,10 +9,10 @@
 <title>PANGOLIER - Premium Walk</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{height:100%;height:100dvh}
-body{background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;width:100vw;height:100dvh;overflow:hidden;touch-action:none;font-family:'Courier New',monospace}
-#gc{position:relative;flex-shrink:0}
-canvas{display:block;touch-action:none}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;background:#000}
+body{display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace}
+#gc{position:relative;overflow:hidden;background:#000;flex-shrink:0}
+#gc canvas{display:block;touch-action:none}
 #hud{position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.5));pointer-events:none;z-index:2}
 #hud span{color:#fff;font-size:12px;font-weight:bold;letter-spacing:1px}
 #elLives{font-size:14px}
@@ -37,8 +37,8 @@ canvas{display:block;touch-action:none}
 #btnNameContinue{margin-top:14px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 32px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755}
 #nameWarn{height:18px;color:#ff7675;font-size:10px;margin-top:8px}
 /* OVERLAY */
-#ov{position:absolute;inset:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;-webkit-overflow-scrolling:touch}
-@media(max-height:600px){#ov{justify-content:flex-start;padding-top:8px;padding-bottom:12px}}
+#ov{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(5,5,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 10px;z-index:10;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+@media(max-height:600px){#ov{padding-top:4px}}
 
 #ov>*{flex-shrink:0}
 #btnStart{flex-shrink:0 !important}
@@ -51,10 +51,10 @@ canvas{display:block;touch-action:none}
 .tb:hover,.tb.on{background:#ff4757;color:#fff;border-color:#ff4757}
 .panel{display:none;width:min(320px,92vw);text-align:center}
 .panel.on{display:block}
-#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:14px 0;font-size:15px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:10px;transition:transform .1s;width:100%;max-width:260px;-webkit-tap-highlight-color:transparent}
+#btnStart{background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 0;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 24px #ff475766;margin-top:6px;transition:transform .1s;width:100%;max-width:260px;-webkit-tap-highlight-color:transparent}
 #btnStart:active{transform:scale(.97)}
 /* MOBILE */
-#mctrl{position:absolute;bottom:0;left:0;right:0;height:186px;z-index:5;pointer-events:none;display:none}
+#mctrl{position:absolute;bottom:0;left:0;right:0;height:190px;z-index:5;pointer-events:none;display:none;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%)}
 .mbtn{width:68px;height:68px;border-radius:50%;border:2.5px solid rgba(255,255,255,.22);color:#fff;font-size:24px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;background:rgba(0,0,0,.40);display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s;-webkit-tap-highlight-color:transparent}
 .mbtn:active{background:rgba(255,255,255,.28);transform:scale(.92)}
 #mcLeft{position:absolute;left:8px;bottom:4px;display:flex;gap:6px}
@@ -123,63 +123,70 @@ canvas{display:block;touch-action:none}
   </div>
 
   <!-- CONTROLLER SEÇİM EKRANI -->
-<div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px">
-  <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700">🎮 CHOOSE CONTROLS</div>
-  <div style="color:#666;font-size:10px;letter-spacing:2px">HOW DO YOU WANT TO PLAY?</div>
-  <div style="display:flex;gap:18px;margin-top:8px">
-    <!-- Joystick seçeneği -->
-    <div onclick="startWithController('joystick')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+<div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700;text-align:center">🎮 CHOOSE CONTROLS</div>
+  <div style="color:#666;font-size:10px;letter-spacing:2px;text-align:center">HOW DO YOU WANT TO PLAY?</div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+    <div onclick="startWithController('joystick')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:20px 14px;text-align:center;min-width:130px;flex:1;max-width:160px;transition:all .15s;-webkit-tap-highlight-color:transparent"
          onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
          onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
-      <div style="font-size:40px;margin-bottom:8px">🕹️</div>
-      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">JOYSTICK</div>
-      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Analog stick<br>+ fire button</div>
+      <div style="font-size:44px;margin-bottom:10px">🕹️</div>
+      <div style="color:#ffd700;font-size:12px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">JOYSTICK</div>
+      <div style="color:#666;font-size:9px;margin-top:6px;font-family:'Courier New',monospace;line-height:1.5">Analog stick<br>+ jump + fire</div>
     </div>
-    <!-- D-Pad seçeneği -->
-    <div onclick="startWithController('dpad')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+    <div onclick="startWithController('dpad')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:20px 14px;text-align:center;min-width:130px;flex:1;max-width:160px;transition:all .15s;-webkit-tap-highlight-color:transparent"
          onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
          onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
-      <div style="font-size:40px;margin-bottom:8px">⬅️➡️</div>
-      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">D-PAD</div>
-      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Left/Right arrows<br>+ jump + fire</div>
+      <div style="font-size:44px;margin-bottom:10px">⬅️➡️</div>
+      <div style="color:#ffd700;font-size:12px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">D-PAD</div>
+      <div style="color:#666;font-size:9px;margin-top:6px;font-family:'Courier New',monospace;line-height:1.5">Arrow buttons<br>+ jump + fire</div>
     </div>
   </div>
-  <div style="color:#444;font-size:9px;font-family:'Courier New',monospace;margin-top:4px">Keyboard always works on desktop</div>
+  <div style="color:#333;font-size:9px;font-family:'Courier New',monospace;text-align:center">Keyboard always works on desktop</div>
 </div>
 
 <!-- KARAKTER SEÇİM EKRANI -->
-<div id="charSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto">
-  <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;margin-bottom:6px;text-shadow:0 0 18px #ffd700">⚔ CHOOSE YOUR HERO ⚔</div>
-  <div style="color:#888;font-size:10px;letter-spacing:2px;margin-bottom:14px">SELECT YOUR FIGHTER</div>
-  <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:420px;width:100%"></div>
-  <div id="charDesc" style="margin-top:14px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:28px"></div>
-  <button id="btnCharStart" style="margin-top:12px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 36px;font-size:13px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755;display:none">▶ START</button>
+<div id="charSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:15;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden">
+  <!-- Sabit başlık -->
+  <div style="flex-shrink:0;text-align:center;padding:14px 10px 6px">
+    <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 18px #ffd700">⚔ CHOOSE YOUR HERO ⚔</div>
+    <div style="color:#666;font-size:10px;letter-spacing:2px;margin-top:3px">SELECT YOUR FIGHTER</div>
+  </div>
+  <!-- Kaydırılabilir orta alan -->
+  <div style="flex:1;overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch;padding:4px 10px 0">
+    <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:420px;margin:0 auto"></div>
+    <div id="charDesc" style="margin-top:10px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:24px;padding:0 10px"></div>
+  </div>
+  <!-- Sabit alt buton -->
+  <div style="flex-shrink:0;padding:10px;width:100%;text-align:center;background:linear-gradient(to top,rgba(3,3,20,1) 70%,transparent)">
+    <button id="btnCharStart" style="background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:14px 48px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:10px;box-shadow:0 0 22px #ff475755;display:none;width:100%;max-width:260px">▶ START</button>
+  </div>
 </div>
 
 <div id="ov">
-    <canvas id="logo" width="320" height="110" style="max-width:min(95vw,320px);max-height:min(110px,18vh);margin-bottom:4px"></canvas>
-    <div id="langBar" style="display:flex;gap:8px;margin-bottom:6px">
+    <canvas id="logo" width="320" height="110" style="max-width:min(88%,280px);max-height:min(90px,15vh);margin-bottom:3px"></canvas>
+    <div id="langBar" style="display:flex;gap:8px;margin-bottom:4px">
       <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇹🇷 TR</button>
       <button id="btnEN" onclick="setLang('en')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇬🇧 EN</button>
     </div>
-    <div id="goTitle" style="display:none;font-size:22px;color:#ff4757;font-weight:bold;letter-spacing:3px;margin-bottom:2px"></div>
+    <div id="goTitle" style="display:none;font-size:18px;color:#ff4757;font-weight:bold;letter-spacing:2px;margin-bottom:1px"></div>
     <div id="goScore" style="display:none;font-size:12px;color:#aaa;margin-bottom:8px"></div>
-    <div style="display:flex;gap:6px;margin:4px 0 8px">
+    <div style="display:flex;gap:6px;margin:3px 0 5px">
       <button class="tb on" id="tbHi">🏆 EN İYİ</button>
       <button class="tb" id="tbCred">ℹ YAPIMCILAR</button>
     </div>
     <div style="margin:6px 0 4px">
-      <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ" style="background:#0d0d22;color:#fff;border:1px solid #ff475766;padding:8px 12px;font-family:'Courier New',monospace;font-size:13px;border-radius:6px;width:180px;text-align:center;outline:none;letter-spacing:1px">
-      <div id="nameWarn" style="color:#ff4757;font-size:10px;margin-top:3px;min-height:14px"></div>
+      <input id="nameFirstInput" maxlength="14" placeholder="ADINI YAZ" style="background:#0d0d22;color:#fff;border:1px solid #ff475766;padding:6px 10px;font-family:'Courier New',monospace;font-size:13px;border-radius:6px;width:180px;text-align:center;outline:none;letter-spacing:1px">
+      <div id="nameWarn" style="color:#ff4757;font-size:10px;margin-top:3px;min-height:10px"></div>
     </div>
-    <div id="activePlayerName" style="margin:2px 0;color:#74b9ff;font-size:10px;letter-spacing:1px;font-weight:bold"></div>
+    <div id="activePlayerName" style="margin:1px 0;color:#74b9ff;font-size:10px;letter-spacing:1px;font-weight:bold"></div>
     <button id="btnStart">▶ MACERAYA BAŞLA</button>
     <div class="panel" id="pHi">
-      <div style="color:#ffd700;font-size:11px;letter-spacing:2px;margin-bottom:8px">🏆 EN YÜKSEK SKORLAR</div>
+      <div style="color:#ffd700;font-size:11px;letter-spacing:2px;margin-bottom:4px">🏆 EN YÜKSEK SKORLAR</div>
       <div id="hiList" style="font-size:11px;color:#ccc;line-height:1.9;text-align:left;min-height:40px"></div>
       <button id="btnClear" style="margin-top:8px;background:#1a1a2e;color:#666;border:1px solid #333;padding:5px 14px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:3px">Sıfırla</button>
     </div>
-    <div class="panel" id="pCred" style="overflow:hidden;height:180px;position:relative;width:min(320px,92vw);background:rgba(0,0,0,.3);border-radius:8px">
+    <div class="panel" id="pCred" style="overflow:hidden;height:min(180px,22vh);position:relative;width:min(320px,92vw);background:rgba(0,0,0,.3);border-radius:8px">
       <!-- Üst ve alt fade maskeleri -->
       <div style="position:absolute;top:0;left:0;right:0;height:28px;background:linear-gradient(to bottom,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
       <div style="position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(to top,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
@@ -195,7 +202,7 @@ canvas{display:block;touch-action:none}
         <div style="color:#fff;font-size:12px;font-weight:bold">Tolga&amp;Misha <span id="ylmzSpan"></span></div>
 
         <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 AI ENGINEERING & DARK ARTS</div>
-        <div style="color:#fff;font-size:12px">Claude Sonnet — Anthropic</div>
+        <div style="color:#fff;font-size:12px">Rex Voltmann</div>
         <div style="color:#555;font-size:9px;font-style:italic">"I just work here"</div>
 
         <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎭 CHARACTER ANIMATION DIRECTOR</div>
@@ -274,29 +281,42 @@ const G_BALLOON=0.09;  // original dreamy balloon float
 
 function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const ctrlH=isTouch?190:0;
+  const ctrlH=isTouch?188:0;
   const vw=window.innerWidth;
-  const vh=window.innerHeight-ctrlH;
-  // Tam ekranı doldur — max sınır yok, aspect ratio koru
-  const s=Math.min(vw/GW, vh/GH);
+  const vh=window.innerHeight;
+  const availH=vh-ctrlH;
+
+  // Scale: ekranı tamamen doldur, aspect ratio koru
+  // Dikey telefon: genişlik kısıtlıysa genişliğe göre, yükseklik kısıtlıysa yüksekliğe göre
+  const s=Math.min(vw/GW, availH/GH);
   const cw=Math.round(GW*s);
   const ch=Math.round(GH*s);
+
+  // Canvas ve #gc boyutu
   C.style.width=cw+'px';
   C.style.height=ch+'px';
+  C.style.position='';
+  C.style.left='';
+  C.style.top='';
+
   const gc=document.getElementById('gc');
   gc.style.width=cw+'px';
   gc.style.height=ch+'px';
-  // Overlay'leri de aynı boyuta getir
+
+  // Overlay'ler #gc ile aynı boyut
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){el.style.width=cw+'px';el.style.height=ch+'px';}
   });
+
+  // mctrl: canvas genişliğinde, canvas altına yapışık
+  const mc=document.getElementById('mctrl');
+  if(mc){mc.style.width=cw+'px';}
 }
 resize();
 addEventListener('resize',resize);
-// Android'de adres çubuğu kaybolunca tekrar hesapla
-addEventListener('orientationchange',()=>setTimeout(resize,300));
-screen.orientation&&screen.orientation.addEventListener('change',()=>setTimeout(resize,300));
+addEventListener('orientationchange',()=>setTimeout(resize,350));
+if(screen.orientation)screen.orientation.addEventListener('change',()=>setTimeout(resize,350));
 
 // roundRect polyfill
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -365,12 +385,12 @@ function startCredScroll(){
   credActive=true;
   const el=document.getElementById('credScroll');
   if(!el)return;
-  credPos=180;
+  credPos=10; // hemen görünsün
   el.style.top=credPos+'px';
   function step(){
     if(!credActive)return;
-    credPos-=0.55;
-    if(credPos<-el.scrollHeight) credPos=180;
+    credPos-=0.9; // daha hızlı
+    if(credPos<-el.scrollHeight) credPos=10;
     el.style.top=Math.round(credPos)+'px';
     credRaf=requestAnimationFrame(step);
   }
@@ -386,7 +406,7 @@ setTimeout(()=>{
   const tbHi=document.getElementById('tbHi');
   const tbCred=document.getElementById('tbCred');
   if(tbHi)  tbHi.addEventListener('click',stopCredScroll);
-  if(tbCred)tbCred.addEventListener('click',()=>setTimeout(startCredScroll,60));
+  if(tbCred)tbCred.addEventListener('click',()=>startCredScroll());
 },300);
 
 
@@ -526,8 +546,8 @@ function switchTab(n){
   });
   if(n==='Hi')renderHi();
 }
-document.getElementById('tbHi').onclick=()=>switchTab('Hi');
-document.getElementById('tbCred').onclick=()=>switchTab('Cred');
+document.getElementById('tbHi').onclick=()=>{switchTab('Hi');stopCredScroll();};
+document.getElementById('tbCred').onclick=()=>{switchTab('Cred');startCredScroll();};
 
 // ═══════════════════════════════════════════════════
 // HI SCORE
