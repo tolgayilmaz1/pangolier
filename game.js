@@ -326,43 +326,43 @@ let charSelectRaf = null, charSelectFrame = 0;
 
 function buildCharSelect(){
   const grid = document.getElementById('charGrid');
-  const desc = document.getElementById('charDesc');
   const btnStart = document.getElementById('btnCharStart');
+  if(btnStart) btnStart.style.display = 'none'; // artık kullanılmıyor — tap=seç+devam
   grid.innerHTML = '';
 
   CHAR_DEFS.forEach((ch, i) => {
     const card = document.createElement('div');
+    // Android'de tam görünür küçük kartlar — overflow:hidden yok ki scroll çalışsın
     card.style.cssText = `background:rgba(10,8,30,.7);border:2px solid rgba(255,255,255,.15);
-      border-radius:14px;padding:12px 8px 8px;text-align:center;cursor:pointer;transition:all .18s;
-      display:flex;flex-direction:column;align-items:center;gap:6px;
-      box-shadow:0 4px 18px rgba(0,0,0,.5);position:relative;overflow:hidden;`;
+      border-radius:14px;padding:8px 6px 6px;text-align:center;cursor:pointer;
+      transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;
+      box-shadow:0 4px 18px rgba(0,0,0,.5);-webkit-tap-highlight-color:transparent;`;
     card.innerHTML = `
-      <canvas width="120" height="140" id="charPrev${i}" style="border-radius:8px;background:transparent;display:block"></canvas>
-      <div style="color:#ffd700;font-size:10px;font-weight:bold;letter-spacing:1.5px;font-family:'Courier New',monospace;text-shadow:0 0 8px #ffd700">${ch.name}</div>
+      <canvas width="100" height="110" id="charPrev${i}" style="border-radius:8px;background:transparent;display:block"></canvas>
+      <div style="color:#ffd700;font-size:9px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace;text-shadow:0 0 8px #ffd700">${ch.name}</div>
+      <div style="color:#555;font-size:8px;font-family:'Courier New',monospace;letter-spacing:1px">▶ SEÇ</div>
     `;
     card.onclick = () => {
       selectedChar = ch;
-      desc.innerHTML = `<span style="color:${ch.cape1||'#ff4757'}">${ch.emoji}</span> <span style="color:#e0e0e0">${ch.desc}</span>`;
-      btnStart.style.display = 'block';
-      // highlight
+      // Seçili kartı vurgula
       grid.querySelectorAll('[data-card]').forEach(c => {
         c.style.borderColor='rgba(255,255,255,.15)';
         c.style.background='rgba(10,8,30,.7)';
         c.style.boxShadow='0 4px 18px rgba(0,0,0,.5)';
+        c.style.transform='scale(1)';
       });
       card.style.borderColor = '#ffd700';
-      card.style.background = `rgba(255,215,0,.08)`;
-      card.style.boxShadow = `0 0 24px ${ch.cape1||'#ffd700'}66, 0 4px 18px rgba(0,0,0,.5)`;
+      card.style.background = `rgba(255,215,0,.12)`;
+      card.style.boxShadow = `0 0 28px ${ch.cape1||'#ffd700'}99, 0 4px 18px rgba(0,0,0,.5)`;
+      card.style.transform = 'scale(1.06)';
+      // 180ms sonra geç — kullanıcı seçtiğini görsün
+      setTimeout(() => { startWithChar(); }, 180);
     };
     card.setAttribute('data-card','1');
-    card.onmouseenter = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.07)'; } };
-    card.onmouseleave = () => { if(selectedChar!==ch){ card.style.background='rgba(10,8,30,.7)'; } };
+    card.onmouseenter = () => { if(selectedChar!==ch){ card.style.background='rgba(255,255,255,.07)'; card.style.transform='scale(1.02)'; }};
+    card.onmouseleave = () => { if(selectedChar!==ch){ card.style.background='rgba(10,8,30,.7)'; card.style.transform='scale(1)'; }};
     grid.appendChild(card);
   });
-
-  // ilk kartı seç
-  grid.children[0] && grid.children[0].click();
-  document.getElementById('btnCharStart').onclick = startWithChar;
 
   // Animasyonlu preview başlat
   if(charSelectRaf) cancelAnimationFrame(charSelectRaf);
@@ -4049,88 +4049,14 @@ function showGameOver(){
       document.getElementById('goTitle').textContent='OYUN BİTTİ';
       document.getElementById('goScore').style.display='block';
       document.getElementById('goScore').innerHTML=`Skor: <b style="color:#ffd700">${score.toLocaleString()}</b> — Bölüm: ${level}`+(isNew?' 🏆<span style="color:#ffd700"> YENİ REKOR!</span>':'');
-      // Menüye gitmek yerine cheat overlay aç
-      showCheatOv();
+      document.getElementById('ov').style.display='flex';
+      document.getElementById('mctrl').style.display='none';
+      if(!lRaf)animLogo();
     }
   }
   goAnim();
 }
 document.getElementById('btnStart').onclick=startGame;
-
-// ═══════════════════════════════════════════════════
-// PAUSE
-// ═══════════════════════════════════════════════════
-let paused=false;
-function togglePause(){
-  if(!running&&!paused)return; // oyun yokken çalışmasın
-  paused=!paused;
-  const ov=document.getElementById('pauseOv');
-  const btn=document.getElementById('btnPause');
-  if(paused){
-    ov.style.display='flex';
-    if(btn)btn.textContent='▶';
-    stopBGM();
-  }else{
-    ov.style.display='none';
-    if(btn)btn.textContent='⏸';
-    startBGM(Math.floor((level-1)/3)%WORLDS.length);
-    _lastFrameTime=0; // delta reset — uzun duraklama sonrası atlama önle
-    rafGame=requestAnimationFrame(loop);
-  }
-}
-function pauseToMenu(){
-  paused=false;
-  running=false;
-  document.getElementById('pauseOv').style.display='none';
-  document.getElementById('btnPause').textContent='⏸';
-  stopBGM();
-  showMenu();
-}
-// ESC ile de pause
-addEventListener('keydown',e=>{ if(e.key==='Escape'&&running)togglePause(); },{capture:true});
-
-// ═══════════════════════════════════════════════════
-// CHEAT CODE — game over sonrası
-// ═══════════════════════════════════════════════════
-const CHEAT_CODE='12345';
-function showCheatOv(){
-  const el=document.getElementById('cheatOv');
-  if(!el)return;
-  document.getElementById('cheatInput').value='';
-  document.getElementById('cheatWarn').textContent='';
-  el.style.display='flex';
-  setTimeout(()=>document.getElementById('cheatInput').focus(),100);
-}
-function hideCheatOv(){
-  document.getElementById('cheatOv').style.display='none';
-  showMenu();
-}
-function tryCheatCode(){
-  const val=document.getElementById('cheatInput').value.trim();
-  const warn=document.getElementById('cheatWarn');
-  if(val===CHEAT_CODE){
-    document.getElementById('cheatOv').style.display='none';
-    // bir sonraki bölüme geç: lives sıfırlama, level++ ve devam
-    lives=3;level=Math.min(level+1,LEVEL_MSGS.length);
-    score=score; // skoru koru
-    updLives();
-    document.getElementById('mctrl').style.display=
-      (('ontouchstart' in window)||navigator.maxTouchPoints>0)?'block':'none';
-    spawnLevel(level);
-    running=true;_lastFrameTime=0;
-    startBGM(Math.floor((level-1)/3)%WORLDS.length);
-    rafGame=requestAnimationFrame(loop);
-  }else{
-    warn.textContent=lang==='tr'?'❌ Yanlış kod! Tekrar dene.':'❌ Wrong code! Try again.';
-    document.getElementById('cheatInput').value='';
-    document.getElementById('cheatInput').focus();
-  }
-}
-// Enter tuşu da çalışsın
-setTimeout(()=>{
-  const inp=document.getElementById('cheatInput');
-  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')tryCheatCode();});
-},0);
 
 // ═══════════════════════════════════════════════════
 // DELTA-TIME — 60fps normalize
@@ -4148,7 +4074,6 @@ const DT_MIN = 0.5, DT_MAX = 2.0; // sınırlar: donma/patlamayı önler
 // ═══════════════════════════════════════════════════
 function loop(now){
   if(!running)return;
-  if(paused)return; // pause sırasında loop durur
 
   // ── Delta-time hesabı ────────────────────────────
   if(_lastFrameTime===0)_lastFrameTime=now;
