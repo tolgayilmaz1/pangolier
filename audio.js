@@ -11,94 +11,35 @@ function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   const vw=window.innerWidth;
   const vh=window.innerHeight;
-  const isPortrait=vw<vh;
   const ctrlH=isTouch?190:0;
+  const avH=vh-ctrlH;
+  const s=Math.min(vw/GW, avH/GH);
+  const cw=Math.round(GW*s);
+  const ch=Math.round(GH*s);
+
+  C.style.width=cw+'px';
+  C.style.height=ch+'px';
+
   const gc=document.getElementById('gc');
+  gc.style.width=vw+'px';
+  gc.style.height=vh+'px';
+
   const mctrl=document.getElementById('mctrl');
-
-  let s,cw,ch;
-
-  if(isPortrait){
-    // Portrait: canvas landscape olarak hesaplanır, gc rotate edilir
-    // gc'nin rotate sonrası boyutu: gc_w=vh-ctrlH, gc_h=vw olacak
-    const rotW=vh-ctrlH;  // rotate sonrası genişlik
-    const rotH=vw;         // rotate sonrası yükseklik
-    s=Math.min(rotW/GW, rotH/GH);
-    cw=Math.round(GW*s);
-    ch=Math.round(GH*s);
-
-    C.style.width=cw+'px';
-    C.style.height=ch+'px';
-
-    // gc: portrait ekranda landscape alan kadar — rotate edilecek
-    const gcW=rotW;
-    const gcH=rotH;
-    gc.style.width=gcW+'px';
-    gc.style.height=gcH+'px';
-    gc.style.position='fixed';
-    // Rotate 90deg: origin sol-üst, sonra kaydır
-    gc.style.transformOrigin='top left';
-    gc.style.transform=`rotate(90deg) translateX(0px) translateY(-${gcW}px)`;
-    gc.style.top='0';
-    gc.style.left='0';
-    gc.style.overflow='hidden';
-    gc.style.display='flex';
-    gc.style.alignItems='center';
-    gc.style.justifyContent='flex-start';
-
-    // mctrl: rotasyonun dışında, ekranın altında
-    if(mctrl&&isTouch){
-      mctrl.style.display='block';
-      mctrl.style.position='fixed';
-      mctrl.style.bottom='0';
-      mctrl.style.left='0';
-      mctrl.style.width='100vw';
-      mctrl.style.height=ctrlH+'px';
-      mctrl.style.top='auto';
-      mctrl.style.transform='none';
-      mctrl.style.zIndex='999';
-    }
-
-  } else {
-    // Landscape: normal davranış
-    s=Math.min(vw/GW, (vh-ctrlH)/GH);
-    cw=Math.round(GW*s);
-    ch=Math.round(GH*s);
-
-    C.style.width=cw+'px';
-    C.style.height=ch+'px';
-
-    gc.style.width='100vw';
-    gc.style.height='100vh';
-    gc.style.position='fixed';
-    gc.style.top='0';
-    gc.style.left='0';
-    gc.style.transform='none';
-    gc.style.transformOrigin='';
-    gc.style.overflow='';
-    gc.style.display='flex';
-    gc.style.alignItems='center';
-    gc.style.justifyContent='flex-start';
-
-    if(mctrl&&isTouch){
-      mctrl.style.display='block';
-      mctrl.style.position='fixed';
-      mctrl.style.bottom='0';
-      mctrl.style.left='0';
-      mctrl.style.width='100vw';
-      mctrl.style.height=ctrlH+'px';
-      mctrl.style.top='auto';
-      mctrl.style.transform='none';
-    }
+  if(mctrl&&isTouch){
+    mctrl.style.display='block';
+    mctrl.style.position='fixed';
+    mctrl.style.top=ch+'px';
+    mctrl.style.left='0';
+    mctrl.style.width=vw+'px';
+    mctrl.style.height=(vh-ch)+'px';
+    mctrl.style.bottom='auto';
   }
 
-  // Overlay'ler canvas boyutunda
   ['ov','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){el.style.width=cw+'px';el.style.height=ch+'px';}
   });
 
-  // Karakter/ctrl seçim her zaman tam ekran, rotasyondan bağımsız
   ['charSelectOv','ctrlSelectOv'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
@@ -106,9 +47,12 @@ function resize(){
       el.style.top='0';el.style.left='0';
       el.style.width='100vw';el.style.height='100vh';
       el.style.transform='none';
-      el.style.zIndex='9999';
     }
   });
+
+  // Portrait uyarısı göster/gizle
+  const rot=document.getElementById('rotateHint');
+  if(rot) rot.style.display=(vw<vh)?'flex':'none';
 }
 resize();
 addEventListener('resize',resize);
