@@ -9,27 +9,65 @@ const G_BALLOON=0.065;  // original dreamy balloon float
 
 function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const ctrlH=isTouch?190:0;
   const vw=window.innerWidth;
-  const vh=window.innerHeight-ctrlH;
-  // Tam ekranı doldur — max sınır yok, aspect ratio koru
-  const s=Math.min(vw/GW, vh/GH);
+  const vh=window.innerHeight;
+  const isPortrait=vw<vh;
+
+  // Portrait modda: genişliği baz al, ctrl alanı daha az
+  const ctrlH=isTouch?(isPortrait?Math.round(vh*0.38):190):0;
+  const avW=vw;
+  const avH=vh-ctrlH;
+
+  // Canvas scale — portrait'te genişliği tam kullan
+  const s=Math.min(avW/GW, avH/GH);
   const cw=Math.round(GW*s);
   const ch=Math.round(GH*s);
+
   C.style.width=cw+'px';
   C.style.height=ch+'px';
+
   const gc=document.getElementById('gc');
-  gc.style.width=cw+'px';
-  gc.style.height=ch+'px';
-  // Overlay'leri de aynı boyuta getir
-  ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
+  gc.style.width=vw+'px';        // gc tam ekran genişliği
+  gc.style.height=vh+'px';       // gc tam ekran yüksekliği
+  gc.style.display='flex';
+  gc.style.flexDirection='column';
+  gc.style.alignItems='center';
+  gc.style.justifyContent=isPortrait?'flex-start':'center';
+  gc.style.paddingTop=isPortrait?'0':'0';
+
+  // Canvas'ı gc içinde üstte ortala
+  C.style.display='block';
+  C.style.marginTop='0';
+
+  // mctrl — portrait'te canvas altına yerleştir
+  const mctrl=document.getElementById('mctrl');
+  if(mctrl&&isTouch){
+    mctrl.style.position='fixed';
+    mctrl.style.bottom='0';
+    mctrl.style.left='0';
+    mctrl.style.width='100vw';
+    mctrl.style.height=ctrlH+'px';
+  }
+
+  // Oyun overlay'leri (ov, mapOv, trans) canvas boyutunda
+  ['ov','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){el.style.width=cw+'px';el.style.height=ch+'px';}
+  });
+
+  // Karakter ve controller seçim ekranları TAM EKRAN — canvas boyutundan bağımsız
+  ['charSelectOv','ctrlSelectOv'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.style.position='fixed';
+      el.style.top='0';el.style.left='0';
+      el.style.width='100vw';el.style.height='100vh';
+      el.style.removeProperty('inset');
+    }
   });
 }
 resize();
 addEventListener('resize',resize);
-// Android'de adres çubuğu kaybolunca tekrar hesapla
 addEventListener('orientationchange',()=>setTimeout(resize,300));
 screen.orientation&&screen.orientation.addEventListener('change',()=>setTimeout(resize,300));
 
