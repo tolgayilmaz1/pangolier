@@ -334,13 +334,13 @@ function buildCharSelect(){
     const card = document.createElement('div');
     // Android'de tam görünür küçük kartlar — overflow:hidden yok ki scroll çalışsın
     card.style.cssText = `background:rgba(10,8,30,.7);border:2px solid rgba(255,255,255,.15);
-      border-radius:14px;padding:8px 6px 6px;text-align:center;cursor:pointer;
-      transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;
+      border-radius:14px;padding:10px 8px 8px;text-align:center;cursor:pointer;
+      transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px;
       box-shadow:0 4px 18px rgba(0,0,0,.5);-webkit-tap-highlight-color:transparent;`;
     card.innerHTML = `
-      <canvas width="100" height="110" id="charPrev${i}" style="border-radius:8px;background:transparent;display:block"></canvas>
-      <div style="color:#ffd700;font-size:9px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace;text-shadow:0 0 8px #ffd700">${ch.name}</div>
-      <div style="color:#555;font-size:8px;font-family:'Courier New',monospace;letter-spacing:1px">▶ SEÇ</div>
+      <canvas width="120" height="130" id="charPrev${i}" style="border-radius:8px;background:transparent;display:block;width:100%;max-width:120px"></canvas>
+      <div style="color:#ffd700;font-size:10px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace;text-shadow:0 0 8px #ffd700">${ch.name}</div>
+      <div style="color:#444;font-size:8px;font-family:'Courier New',monospace;letter-spacing:1px">▶ TAP</div>
     `;
     card.onclick = () => {
       selectedChar = ch;
