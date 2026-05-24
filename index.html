@@ -8,16 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
 <meta name="screen-orientation" content="landscape">
-<title>PANGOLIER - Premium Walk</title>
+<meta name="description" content="Pangolier - The Armored Balloon Hunter. Zırhlı balon avcısı platform oyunu.">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Icons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<title>PANGOLIER</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* Oyun sırasında tam ekran — tarayıcı UI'yi gizle */
   :fullscreen #ov { display: none !important; }
   :-webkit-full-screen #ov { display: none !important; }
-  :fullscreen body, :-webkit-full-screen body {
-    background: #000;
-  }
-  /* Android Chrome adres çubuğu kaymalarına karşı */
+  :fullscreen body, :-webkit-full-screen body { background: #000; }
   html { height: 100%; height: 100dvh; }
   body { height: 100%; height: 100dvh; }
 </style>
@@ -29,52 +34,25 @@
     <span id="elScore">SKOR: 0</span>
     <span id="elLives">❤️❤️❤️</span>
     <span id="elLevel">BÖLÜM 1</span>
-    <button id="btnPause" onclick="togglePause()" style="background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:14px;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:all;-webkit-tap-highlight-color:transparent;padding:0">⏸</button>
-  </div>
-
-  <!-- PAUSE OVERLAY -->
-  <div id="pauseOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.88);z-index:25;flex-direction:column;align-items:center;justify-content:center;gap:18px">
-    <div style="color:#ffd700;font-size:26px;font-weight:bold;letter-spacing:4px;text-shadow:0 0 20px #ffd700;font-family:'Courier New',monospace">⏸ PAUSE</div>
-    <button onclick="togglePause()" style="background:linear-gradient(135deg,#2ed573,#1a8a45);color:#fff;border:none;padding:12px 36px;font-size:14px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 18px #2ed57366">▶ DEVAM ET</button>
-    <button onclick="pauseToMenu()" style="background:rgba(255,255,255,.07);color:#aaa;border:1px solid #333;padding:10px 28px;font-size:12px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px">🏠 MENÜ</button>
-  </div>
-
-  <!-- CHEAT / KOD GİRME OVERLAY (game over sonrası) -->
-  <div id="cheatOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.93);z-index:26;flex-direction:column;align-items:center;justify-content:center;gap:14px">
-    <div style="color:#ff4757;font-size:22px;font-weight:bold;letter-spacing:3px;font-family:'Courier New',monospace;text-shadow:0 0 16px #ff4757">💀 OYUN BİTTİ</div>
-    <div style="color:#aaa;font-size:11px;letter-spacing:2px;font-family:'Courier New',monospace">GİZLİ KOD GİR</div>
-    <input id="cheatInput" maxlength="10" placeholder="_ _ _ _ _"
-      style="background:#0d0d22;color:#ffd700;border:2px solid #ff475766;border-radius:8px;padding:12px 18px;font-size:22px;font-family:'Courier New',monospace;letter-spacing:6px;text-align:center;outline:none;width:200px"
-      oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-    >
-    <div id="cheatWarn" style="color:#ff7675;font-size:10px;font-family:'Courier New',monospace;min-height:14px"></div>
-    <button onclick="tryCheatCode()" style="background:linear-gradient(135deg,#ffd700,#c8a000);color:#000;border:none;padding:11px 32px;font-size:13px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;font-weight:bold">✔ ONAYLA</button>
-    <button onclick="hideCheatOv()" style="background:rgba(255,255,255,.06);color:#555;border:1px solid #222;padding:8px 24px;font-size:11px;font-family:'Courier New',monospace;letter-spacing:1px;cursor:pointer;border-radius:6px">İPTAL / MENÜ</button>
   </div>
   <div id="powerBar"></div>
   <div id="powerHud"></div>
   <div id="tut" style="opacity:0"><span id="tutTxt"></span></div>
 
   <div id="mctrl">
-    <!-- JOYSTICK MODU: Sol joystick + sağda zıpla/ateş -->
     <div id="joyCvsWrap" style="display:block">
       <canvas id="joyCanvas" width="160" height="160" style="position:absolute;left:10px;bottom:8px;pointer-events:all;opacity:0.92"></canvas>
       <div style="position:absolute;right:12px;bottom:8px;display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center">
-        <!-- Zıplama butonu: yukarı ok ikonu -->
         <button id="btnUp" style="width:64px;height:64px;border-radius:50%;border:2.5px solid rgba(255,215,0,.7);background:rgba(0,0,0,.4);color:#ffd700;font-size:30px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🦘</button>
-        <!-- Ateş butonu -->
         <button id="btnFire" style="width:80px;height:80px;border-radius:50%;border:2.5px solid rgba(255,71,87,.9);background:rgba(255,71,87,.18);box-shadow:0 0 18px rgba(255,71,87,.5);color:#ff4757;font-size:32px;cursor:pointer;pointer-events:all;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🎯</button>
       </div>
     </div>
 
-    <!-- D-PAD MODU: Sol←→ + sağda zıpla/ateş -->
     <div id="dpadWrap" style="display:none;position:absolute;inset:0;pointer-events:none">
-      <!-- Sol: ← → butonlar -->
       <div style="position:absolute;left:8px;bottom:12px;display:flex;gap:8px;pointer-events:all;align-items:center">
         <button id="btnLeft"  style="width:72px;height:72px;border-radius:14px;border:2.5px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);color:#fff;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">◀</button>
         <button id="btnRight" style="width:72px;height:72px;border-radius:14px;border:2.5px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);color:#fff;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">▶</button>
       </div>
-      <!-- Sağ: zıpla + ateş -->
       <div style="position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center">
         <button id="btnUpD"   style="width:64px;height:64px;border-radius:50%;border:2.5px solid rgba(255,215,0,.7);background:rgba(0,0,0,.4);color:#ffd700;font-size:30px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🦘</button>
         <button id="btnFireD" style="width:80px;height:80px;border-radius:50%;border:2.5px solid rgba(255,71,87,.9);background:rgba(255,71,87,.18);box-shadow:0 0 18px rgba(255,71,87,.5);color:#ff4757;font-size:32px;cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">🎯</button>
@@ -93,41 +71,45 @@
     <div id="transText"></div>
   </div>
 
-  <!-- CONTROLLER SEÇİM EKRANI -->
-<div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px">
-  <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700">🎮 CHOOSE CONTROLS</div>
-  <div style="color:#666;font-size:10px;letter-spacing:2px">HOW DO YOU WANT TO PLAY?</div>
-  <div style="display:flex;gap:18px;margin-top:8px">
-    <!-- Joystick seçeneği -->
-    <div onclick="startWithController('joystick')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
-         onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
-         onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
-      <div style="font-size:40px;margin-bottom:8px">🕹️</div>
-      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">JOYSTICK</div>
-      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Analog stick<br>+ fire button</div>
+  <div id="ctrlSelectOv" style="display:none;position:absolute;inset:0;background:rgba(3,3,20,.97);z-index:16;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px">
+    <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 14px #ffd700">🎮 CHOOSE CONTROLS</div>
+    <div style="color:#666;font-size:10px;letter-spacing:2px">HOW DO YOU WANT TO PLAY?</div>
+    <div style="display:flex;gap:18px;margin-top:8px">
+      <div onclick="startWithController('joystick')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+           onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
+           onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
+        <div style="font-size:40px;margin-bottom:8px">🕹️</div>
+        <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">JOYSTICK</div>
+        <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Analog stick<br>+ fire button</div>
+      </div>
+      <div onclick="startWithController('dpad')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
+           onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
+           onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
+        <div style="font-size:40px;margin-bottom:8px">⬅️➡️</div>
+        <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">D-PAD</div>
+        <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Left/Right arrows<br>+ jump + fire</div>
+      </div>
     </div>
-    <!-- D-Pad seçeneği -->
-    <div onclick="startWithController('dpad')" style="cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:18px 16px;text-align:center;width:140px;transition:all .15s"
-         onmouseenter="this.style.borderColor='#ffd700';this.style.background='rgba(255,215,0,.1)'"
-         onmouseleave="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.06)'">
-      <div style="font-size:40px;margin-bottom:8px">⬅️➡️</div>
-      <div style="color:#ffd700;font-size:11px;font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace">D-PAD</div>
-      <div style="color:#666;font-size:9px;margin-top:4px;font-family:'Courier New',monospace">Left/Right arrows<br>+ jump + fire</div>
-    </div>
+    <div style="color:#444;font-size:9px;font-family:'Courier New',monospace;margin-top:4px">Keyboard always works on desktop</div>
   </div>
-  <div style="color:#444;font-size:9px;font-family:'Courier New',monospace;margin-top:4px">Keyboard always works on desktop</div>
-</div>
 
-<!-- KARAKTER SEÇİM EKRANI -->
-<div id="charSelectOv" style="display:none;position:absolute;inset:0;background:linear-gradient(180deg,#02020e 0%,#060318 60%,#0a0528 100%);z-index:15;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto">
-  <div style="color:#ffd700;font-size:16px;font-weight:bold;letter-spacing:3px;margin-bottom:4px;text-shadow:0 0 20px #ffd700,0 0 40px #ff8c00">⚔ CHOOSE YOUR HERO ⚔</div>
-  <div style="color:#666;font-size:10px;letter-spacing:2px;margin-bottom:12px">SELECT YOUR FIGHTER</div>
-  <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:440px;width:100%"></div>
-  <div id="charDesc" style="margin-top:12px;color:#ccc;font-size:11px;letter-spacing:1px;text-align:center;min-height:28px;padding:0 10px"></div>
-  <button id="btnCharStart" style="margin-top:10px;background:linear-gradient(135deg,#ff4757,#c0392b);color:#fff;border:none;padding:12px 36px;font-size:13px;font-family:'Courier New',monospace;letter-spacing:2px;cursor:pointer;border-radius:8px;box-shadow:0 0 22px #ff475755;display:none">▶ START ADVENTURE</button>
-</div>
+  <div id="charSelectOv" style="display:none;position:absolute;inset:0;background:linear-gradient(180deg,#02020e 0%,#060318 60%,#0a0528 100%);z-index:15;flex-direction:column;align-items:flex-start;justify-content:flex-start;padding:0;overflow:hidden">
+    <!-- Başlık — sabit üstte -->
+    <div style="width:100%;text-align:center;padding:10px 10px 6px;flex-shrink:0;background:linear-gradient(180deg,#02020e,transparent)">
+      <div style="color:#ffd700;font-size:15px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 20px #ffd700,0 0 40px #ff8c00">⚔ CHOOSE YOUR HERO ⚔</div>
+      <div style="color:#555;font-size:9px;letter-spacing:2px;margin-top:3px">TAP A CHARACTER TO START</div>
+    </div>
+    <!-- Kaydırılabilir kart alanı — karakterler buraya sığar, taşarsa scroll -->
+    <div style="flex:1;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 10px 16px;box-sizing:border-box">
+      <div id="charGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:440px;margin:0 auto;width:100%"></div>
+    </div>
+    <!-- btnCharStart gizli — artık kullanılmıyor ama game.js onu arayabilir -->
+    <button id="btnCharStart" style="display:none">▶ START</button>
+    <!-- charDesc de gizli — tap anında geçiyor -->
+    <div id="charDesc" style="display:none"></div>
+  </div>
 
-<div id="ov">
+  <div id="ov">
     <canvas id="logo" width="320" height="110" style="max-width:min(95vw,320px);max-height:min(110px,18vh);margin-bottom:4px"></canvas>
     <div id="langBar" style="display:flex;gap:8px;margin-bottom:6px">
       <button id="btnTR" onclick="setLang('tr')" style="background:#0d0d22;color:#aaa;border:2px solid #333;padding:6px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:6px;letter-spacing:1px">🇹🇷 TR</button>
@@ -145,97 +127,55 @@
     </div>
     <div id="activePlayerName" style="margin:2px 0;color:#74b9ff;font-size:10px;letter-spacing:1px;font-weight:bold"></div>
     <button id="btnStart">▶ MACERAYA BAŞLA</button>
-    <div class="panel" id="pHi">
+    <div class="panel on" id="pHi">
       <div style="color:#ffd700;font-size:11px;letter-spacing:2px;margin-bottom:8px">🏆 EN YÜKSEK SKORLAR</div>
       <div id="hiList" style="font-size:11px;color:#ccc;line-height:1.9;text-align:left;min-height:40px"></div>
       <button id="btnClear" style="margin-top:8px;background:#1a1a2e;color:#666;border:1px solid #333;padding:5px 14px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:3px">Sıfırla</button>
     </div>
     <div class="panel" id="pCred" style="overflow:hidden;height:180px;position:relative;width:min(320px,92vw);background:rgba(0,0,0,.3);border-radius:8px">
-      <!-- Üst ve alt fade maskeleri -->
       <div style="position:absolute;top:0;left:0;right:0;height:28px;background:linear-gradient(to bottom,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
       <div style="position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(to top,rgba(5,5,20,1),transparent);z-index:2;pointer-events:none"></div>
       <div id="credScroll" style="position:absolute;width:100%;text-align:center;font-family:'Courier New',monospace;top:180px">
-
         <div style="color:#ffd700;font-size:15px;letter-spacing:4px;margin:8px 0 4px;text-shadow:0 0 12px #ffd700">✦ CREDITS ✦</div>
         <div style="color:#555;font-size:9px;letter-spacing:2px;margin-bottom:16px">PANGOLIER v2.0 — 2026</div>
-
         <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎮 GAME DESIGN & VISION</div>
         <div style="color:#fff;font-size:12px;font-weight:bold">Mishatlg</div>
-
         <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">💻 LEAD PROGRAMMING</div>
         <div style="color:#fff;font-size:12px;font-weight:bold">Tolga&amp;Misha <span id="ylmzSpan"></span></div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 AI ENGINEERING & DARK ARTS</div>
+        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 AI ENGINEERING</div>
         <div style="color:#fff;font-size:12px">Claude Sonnet — Anthropic</div>
         <div style="color:#555;font-size:9px;font-style:italic">"I just work here"</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎭 CHARACTER ANIMATION DIRECTOR</div>
-        <div style="color:#fff;font-size:12px">Travis Michelson</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Made the cape flutter for 3 weeks straight</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🌍 WORLD BUILDING & LORE MASTER</div>
-        <div style="color:#fff;font-size:12px">Zara Nightwood</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Visited 0 of the 13 locations</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎵 SOUNDTRACK COMPOSER & DJ</div>
-        <div style="color:#fff;font-size:12px">DJ Phantom Beats</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Plays triangle wave at parties</div>
-
         <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎈 BALLOON PHYSICS CONSULTANT</div>
         <div style="color:#fff;font-size:12px">Dr. Floaty McBounce</div>
         <div style="color:#555;font-size:9px;font-style:italic">PhD in Applied Balloon Dynamics, MIT</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🪜 LADDER CLIMBING SPECIALIST</div>
-        <div style="color:#fff;font-size:12px">Igor Climbinski</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Still hasn't reached the top platform</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🗡️ SPEAR TRAJECTORY ENGINEER</div>
-        <div style="color:#fff;font-size:12px">Sir Lancealot III</div>
-        <div style="color:#555;font-size:9px;font-style:italic">The spear hits the ground. On purpose.</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🧪 CAPE AERODYNAMICS RESEARCHER</div>
-        <div style="color:#fff;font-size:12px">Prof. Windsworth Flap</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Spent 6 months on cape wave equations</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🕵️ NINJA CULTURAL ADVISOR</div>
-        <div style="color:#fff;font-size:12px">Anonymous</div>
-        <div style="color:#555;font-size:9px;font-style:italic">We don't know who he is. He prefers it that way.</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🏴‍☠️ PIRATE DIALECT CONSULTANT</div>
-        <div style="color:#fff;font-size:12px">Captain Yargh McGee</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Insisted on adding eye patch to robot too</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🧝 ELF EAR PROPORTIONS DIRECTOR</div>
-        <div style="color:#fff;font-size:12px">Elvina Longear</div>
-        <div style="color:#555;font-size:9px;font-style:italic">"They must be pointier. POINTIER."</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🤖 ROBOT ANTENNA CALIBRATION</div>
-        <div style="color:#fff;font-size:12px">Unit-7 "Beepsworth"</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Self-employed. Literally.</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">⚖️ LEGAL & COMPLIANCE</div>
-        <div style="color:#fff;font-size:12px">Nobody Cares LLC</div>
-        <div style="color:#555;font-size:9px;font-style:italic">Terms & Conditions: ¯\_(ツ)_/¯</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">☕ OFFICIAL COFFEE SPONSOR</div>
-        <div style="color:#fff;font-size:12px">Black Bean Enterprises</div>
-        <div style="color:#555;font-size:9px;font-style:italic">4,200 cups consumed during development</div>
-
-        <div style="color:#ff4757;font-size:9px;letter-spacing:2px;margin-top:14px">🎬 EXECUTIVE PRODUCER</div>
-        <div style="color:#fff;font-size:12px;font-weight:bold">Misha Entertainment</div>
-
         <div style="color:#ffd700;font-size:11px;margin-top:20px;letter-spacing:1px">🎈 No balloons were harmed</div>
         <div style="color:#ffd700;font-size:11px;letter-spacing:1px">in the making of this game.</div>
-        <div style="color:#555;font-size:9px;margin-top:4px;font-style:italic">(One was slightly deflated. We're sorry.)</div>
-
         <div style="color:#333;font-size:9px;margin-top:20px">PANGOLIER v2.0 — 2026 © Misha Entertainment</div>
         <div style="height:180px"></div>
       </div>
     </div>
   </div>
+</div><!-- #gc -->
 
+<!-- Firebase Compat SDK (module değil, global window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Oyun dosyaları -->
+<script src="firebase.js"></script>
 <script src="worlds.js"></script>
+<script src="audio.js"></script>
 <script src="game.js"></script>
-</body>
 
+<!-- PWA Service Worker kaydı -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(r => console.log('[PWA] SW registered:', r.scope))
+        .catch(e => console.warn('[PWA] SW failed:', e));
+    });
+  }
+</script>
+</body>
 </html>
