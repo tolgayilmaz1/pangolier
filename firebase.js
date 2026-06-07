@@ -1,124 +1,171 @@
 // ═══════════════════════════════════════════════════
-// PANGOLIER — Global Hi-Score (Firebase Realtime DB)
-// Compat SDK — PWA/TWA/Android uyumlu
-// ═══════════════════════════════════════════════════
-// YÜKLENİŞ SIRASI: firebase-app-compat → firebase-database-compat → bu dosya
+// PANGOLIER — Global Online Hi-Score
+// Firebase Realtime Database / pangoliersz
 // ═══════════════════════════════════════════════════
 (function () {
-  const NODE   = 'pangolier_scores';
-  const MAX    = 8;
-  let _cache   = [];
-  let _db      = null;
-  let _ref     = null;
-  let _ready   = false;
+  'use strict';
 
-  // ── Firebase başlat ────────────────────────────────
-  function init() {
-    try { firebase.app(); } catch (_) {
-      firebase.initializeApp({
-        apiKey:            "AIzaSyC3QkOPNtLuNYf9zJtG5reUaZx3ikX74U0",
-        authDomain:        "slingfind.firebaseapp.com",
-        databaseURL:       "https://slingfind-default-rtdb.firebaseio.com",
-        projectId:         "slingfind",
-        storageBucket:     "slingfind.firebasestorage.app",
-        messagingSenderId: "439781657093",
-        appId:             "1:439781657093:web:56205afb0fbc0bb1442a6c"
-      });
-    }
-    _db    = firebase.database();
-    _ref   = _db.ref(NODE);
-    _ready = true;
+  const NODE = 'pangolier_scores';
+  const MAX = 50;          // DB'den 50 skor çek, ekranda oyun render'ı ilk 8'i gösterebilir
+  const LOCAL_KEY = 'panghv3';
+  let _cache = [];
+  let _db = null;
+  let _ref = null;
+  let _ready = false;
+  let _listening = false;
 
-    // Realtime listener — başka cihazdan skor gelince anında güncelle
-    _ref.orderByChild('s').limitToLast(MAX)
-      .on('value', snap => {
-        _cache = toArray(snap);
-        doRender();
-      });
+  const CONFIG = {
+    apiKey: "AIzaSyBc1LPmIiX9sAAmE0uT1sV1y8P5dGgBvxQ",
+    authDomain: "pangoliersz.firebaseapp.com",
+    databaseURL: "https://pangoliersz-default-rtdb.europe-west1.firebasedatabase.app/",
+    projectId: "pangoliersz",
+    storageBucket: "pangoliersz.firebasestorage.app",
+    messagingSenderId: "298483809654",
+    appId: "1:298483809654:web:c50e4a841ca1bab5778e57"
+  };
 
-    console.log('[Pangolier] Firebase ✓ →', NODE);
+  function cleanName(n) {
+    if (typeof window.cleanPlayerName === 'function') return window.cleanPlayerName(n);
+    n = String(n || '').trim().toUpperCase();
+    n = n.replace(/[^A-Z0-9ĞÜŞİÖÇ _.-]/g, '');
+    return (n || 'PLAYER').slice(0, 14);
   }
 
-  // ── Snapshot → sorted array ───────────────────────
-  function toArray(snap) {
-    if (!snap || !snap.exists()) return [];
+  function localRead() {
+    try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }
+    catch (_) { return []; }
+  }
+
+  function localWrite(a) {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(a.slice(0, MAX))); }
+    catch (_) {}
+  }
+
+  function normalizeEntry(v, key) {
+    const score = Number(v && (v.s ?? v.score)) || 0;
+    const level = Number(v && (v.l ?? v.level)) || 1;
+    return {
+      _k: key || (v && v._k) || '',
+      n: cleanName(v && (v.n || v.name || v.player || 'PLAYER')),
+      s: score,
+      l: level,
+      d: (v && (v.d || v.date)) || new Date().toLocaleDateString('tr-TR'),
+      ts: Number(v && v.ts) || 0
+    };
+  }
+
+  function sortScores(a) {
+    return (a || [])
+      .map(x => normalizeEntry(x, x && x._k))
+      .filter(x => x.s > 0)
+      .sort((a, b) => (b.s - a.s) || (b.ts - a.ts))
+      .slice(0, MAX);
+  }
+
+  function snapToArray(snap) {
     const arr = [];
-    snap.forEach(c => arr.push({ _k: c.key, ...c.val() }));
-    arr.sort((a, b) => b.s - a.s);
-    return arr.slice(0, MAX);
+    if (!snap || !snap.exists()) return arr;
+    snap.forEach(child => arr.push(normalizeEntry(child.val(), child.key)));
+    return sortScores(arr);
   }
 
-  // ── localStorage fallback ─────────────────────────
-  function localRead()  { try { return JSON.parse(localStorage.getItem('panghv3') || '[]'); } catch { return []; } }
-  function localWrite(a){ try { localStorage.setItem('panghv3', JSON.stringify(a.slice(0, MAX))); } catch {} }
+  function renderSoon() {
+    setTimeout(() => {
+      if (typeof window.renderHi === 'function') window.renderHi();
+    }, 0);
+  }
 
-  // ── getHi: cache önce, arka planda DB ────────────
+  function initFirebase() {
+    if (typeof window.firebase === 'undefined') {
+      console.warn('[Pangolier] Firebase SDK yok, local hi-score çalışıyor.');
+      return false;
+    }
+
+    try {
+      if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(CONFIG);
+      _db = firebase.database();
+      _ref = _db.ref(NODE);
+      _ready = true;
+      console.log('[Pangolier] Global hi-score online:', CONFIG.databaseURL + NODE);
+      return true;
+    } catch (e) {
+      console.warn('[Pangolier] Firebase init hatası:', e);
+      _ready = false;
+      return false;
+    }
+  }
+
+  function startListener() {
+    if (!_ready || !_ref || _listening) return;
+    _listening = true;
+    _ref.orderByChild('s').limitToLast(MAX).on('value', snap => {
+      _cache = snapToArray(snap);
+      // Online skorlar local'e de yazılsın, internet yokken son liste görünsün
+      if (_cache.length) localWrite(_cache);
+      renderSoon();
+    }, err => {
+      console.warn('[Pangolier] Firebase listener:', err);
+      _cache = sortScores(localRead());
+      renderSoon();
+    });
+  }
+
   window.getHi = function () {
-    return _cache.length ? _cache : localRead();
+    return _cache.length ? _cache.slice(0, 8) : sortScores(localRead()).slice(0, 8);
   };
 
-  // ── addHi: DB + local backup ──────────────────────
-  window.addHi = function (s, l) {
-    const pn    = (typeof playerName !== 'undefined') ? playerName : 'PLAYER';
-    const clean = (typeof cleanPlayerName === 'function') ? cleanPlayerName(pn) : String(pn).toUpperCase().slice(0,14);
-    const entry = { n: clean, s, l, d: new Date().toLocaleDateString('tr-TR'), ts: Date.now() };
+  window.addHi = function (score, level) {
+    const s = Number(score) || 0;
+    const l = Number(level) || 1;
+    if (s <= 0) return;
 
-    // Her zaman local'e yaz
-    const loc = localRead();
-    loc.push(entry);
-    loc.sort((a, b) => b.s - a.s);
-    localWrite(loc);
+    const nameFromInput = document.getElementById('nameFirstInput')?.value;
+    let nameFromStorage = '';
+    try { nameFromStorage = localStorage.getItem('pangPlayerName') || ''; } catch (_) {}
+    const nameFromGlobal = nameFromInput || nameFromStorage || 'PLAYER';
+    const entry = {
+      n: cleanName(nameFromGlobal),
+      s,
+      l,
+      d: new Date().toLocaleDateString('tr-TR'),
+      ts: (typeof firebase !== 'undefined' && firebase.database && firebase.database.ServerValue)
+        ? firebase.database.ServerValue.TIMESTAMP
+        : Date.now()
+    };
 
-    if (!_ready || !_ref) { doRender(); return; }
+    const local = sortScores([...localRead(), { ...entry, ts: Date.now() }]);
+    localWrite(local);
+    _cache = sortScores([..._cache, { ...entry, ts: Date.now() }]);
+    renderSoon();
 
-    _ref.push(entry)
-      .then(() => _ref.orderByChild('s').once('value'))
-      .then(snap => {
-        const all = toArray(snap);
-        // MAX'tan fazlaysa en düşüğü sil
-        if (all.length > MAX) {
-          const worst = all[all.length - 1];
-          if (worst && worst._k) _ref.child(worst._k).remove();
-        }
-      })
-      .catch(e => console.warn('[Firebase] addHi:', e));
+    if (!_ready || !_ref) return;
+    _ref.push(entry).catch(e => console.warn('[Pangolier] Skor gönderilemedi:', e));
   };
 
-  // ── renderHi: game.js'deki fonksiyonu çağır ───────
-  function doRender() {
-    if (typeof renderHi === 'function') renderHi();
-    else setTimeout(() => { if (typeof renderHi === 'function') renderHi(); }, 300);
-  }
+  window.clearGlobalHiScores = function () {
+    try { localStorage.removeItem(LOCAL_KEY); } catch (_) {}
+    _cache = [];
+    renderSoon();
+    if (_ready && _ref) return _ref.remove().catch(e => console.warn('[Pangolier] Global skor silinemedi:', e));
+  };
 
-  // ── renderHi override: cache'den çiz ─────────────
-  // game.js'deki renderHi() window.getHi()'yı çağırdığı için
-  // getHi → _cache döndürüyor, renderHi otomatik doğru veriyi çizer.
-  // Ekstra override gerekmez.
-
-  // ── btnClear: tüm global tabloyu sil ─────────────
-  document.addEventListener('DOMContentLoaded', () => {
+  function hookClearButton() {
     const btn = document.getElementById('btnClear');
     if (!btn) return;
     btn.onclick = () => {
-      const msg = (typeof lang !== 'undefined' && lang === 'tr')
-        ? 'Tüm global skorlar silinsin mi?'
-        : 'Delete all global scores?';
+      const msg = (window.lang === 'tr') ? 'Tüm global skorlar silinsin mi?' : 'Delete all global scores?';
       if (!confirm(msg)) return;
-      try { localStorage.removeItem('panghv3'); } catch {}
-      _cache = [];
-      doRender();
-      if (_ready && _ref) _ref.remove().catch(e => console.warn('[Firebase] clear:', e));
+      window.clearGlobalHiScores();
     };
-  });
-
-  // ── SDK hazır mı? ─────────────────────────────────
-  if (typeof firebase !== 'undefined') {
-    init();
-  } else {
-    // index.html'de CDN script'ler async yüklenirse bekle
-    window.addEventListener('load', () => {
-      if (typeof firebase !== 'undefined') init();
-      else console.warn('[Pangolier] Firebase SDK yüklenemedi — local mod');
-    });
   }
+
+  function boot() {
+    initFirebase();
+    startListener();
+    hookClearButton();
+    renderSoon();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

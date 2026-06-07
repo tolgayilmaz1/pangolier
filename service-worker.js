@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // PANGOLIER — Service Worker (PWA Offline Cache)
 // ═══════════════════════════════════════════════════
-const CACHE = 'pangolier-v4-audio-map-settings-lang';
+const CACHE = 'pangolier-v5-global-hiscore';
 
 // Offline çalışması için önbelleğe alınacak dosyalar
 const ASSETS = [
