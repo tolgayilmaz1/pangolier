@@ -17,35 +17,36 @@ function resize(){
   const vh=Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 480);
   document.documentElement.style.setProperty('--app-height', vh+'px');
 
+  const ov=document.getElementById('ov');
+  const mapOv=document.getElementById('mapOv');
+  const trans=document.getElementById('trans');
   const mctrl=document.getElementById('mctrl');
-  const ctrlVisible = !!(isTouch && mctrl && getComputedStyle(mctrl).display !== 'none');
   const portrait = vh >= vw;
+  const menuVisible = !!(ov && getComputedStyle(ov).display !== 'none');
+  const mapVisible = !!(mapOv && getComputedStyle(mapOv).display !== 'none');
+  const transVisible = !!(trans && getComputedStyle(trans).display !== 'none');
 
-  // Mobilde oyun küçük kalmasın:
-  // Portrait: canvas ekranın genişliğini ve joystick dışındaki tüm yüksekliği doldurur.
-  // Landscape: canvas tüm ekranı doldurur, kontroller oyun üstünde kalır.
-  let ctrlH = 0;
-  let gameW = vw;
-  let gameH = vh;
+  // 360x640 telefon referansı:
+  // portrait: oyun 360x450, kontroller 360x190
+  // landscape: oyun 640x360 full, kontroller overlay
+  const gameMode = !!(isTouch && mctrl && !menuVisible && !mapVisible && !transVisible);
+  const ctrlVisible = !!(gameMode && getComputedStyle(mctrl).display !== 'none');
+  const refW=360, refH=640, refCtrlH=190;
+
+  let cw=vw, ch=vh, ctrlH=0;
 
   if(ctrlVisible && portrait){
-    ctrlH = Math.min(190, Math.max(145, Math.round(vh*0.22)));
-    gameH = Math.max(360, vh - ctrlH - Math.round((window.navigator.standalone?0:0)));
-  } else if(ctrlVisible && !portrait){
-    ctrlH = 0;
-    gameH = vh;
-  } else {
-    // Menü / harita / geçiş ekranlarında kontrol alanı ayırma yok.
-    ctrlH = 0;
-    gameH = vh;
-  }
-
-  // Menüde 4:3 oranını koru; oyun sırasında mobilde alanı doldur.
-  let cw, ch;
-  if(ctrlVisible && isTouch){
+    ctrlH = Math.round(vh * (refCtrlH/refH));
+    ctrlH = Math.max(175, Math.min(215, ctrlH));
     cw = vw;
-    ch = Math.max(260, Math.min(gameH, vh));
-  } else {
+    ch = Math.max(380, vh - ctrlH);
+  }else if(ctrlVisible && !portrait){
+    ctrlH = 0;
+    cw = vw;
+    ch = vh;
+  }else{
+    // Menü/harita/geçiş: canvas önemli değil; menü tam ekran overlay.
+    // Oyun başlamadan 4:3 küçük kutu yerine güvenli orta boy tutuyoruz.
     const s=Math.min(vw/GW, vh/GH);
     cw=Math.max(260, Math.round(GW*s));
     ch=Math.max(195, Math.round(GH*s));
@@ -54,8 +55,9 @@ function resize(){
   C.style.width=cw+'px';
   C.style.height=ch+'px';
   C.style.maxWidth='100vw';
-  C.style.maxHeight=gameH+'px';
+  C.style.maxHeight=vh+'px';
   C.style.alignSelf='center';
+  C.style.objectFit='fill';
 
   const gc=document.getElementById('gc');
   if(gc){
@@ -72,37 +74,51 @@ function resize(){
   }
 
   if(mctrl){
-    mctrl.style.display = ctrlVisible ? 'block' : mctrl.style.display;
-    mctrl.style.height=(portrait ? ctrlH : vh)+'px';
-    mctrl.style.top=ctrlVisible ? (portrait ? ch+'px' : '0px') : '0px';
-    mctrl.style.bottom='auto';
-    mctrl.style.left='0';
-    mctrl.style.right='0';
-    mctrl.style.width='100vw';
-    mctrl.style.position='absolute';
+    if(ctrlVisible){
+      mctrl.style.display='block';
+      mctrl.style.position='absolute';
+      mctrl.style.left='0';
+      mctrl.style.right='0';
+      mctrl.style.width='100vw';
+      mctrl.style.pointerEvents='none';
+      if(portrait){
+        mctrl.style.top=ch+'px';
+        mctrl.style.height=ctrlH+'px';
+        mctrl.style.bottom='auto';
+      }else{
+        mctrl.style.top='0px';
+        mctrl.style.height=vh+'px';
+        mctrl.style.bottom='auto';
+      }
+    }
   }
 
-  // Joystick canvas biraz büyüsün ama alt alanı taşırmasın.
   const joy=document.getElementById('joyCanvas');
   if(joy){
-    const js = ctrlVisible && portrait ? Math.min(150, Math.max(118, ctrlH-22)) : Math.min(150, Math.max(112, Math.round(vh*0.22)));
+    const js = (ctrlVisible && portrait) ? Math.min(154, Math.max(128, ctrlH-38)) : Math.min(150, Math.max(112, Math.round(vh*0.32)));
     joy.style.width=js+'px';
     joy.style.height=js+'px';
     joy.style.left='10px';
-    joy.style.bottom='8px';
+    joy.style.bottom='12px';
   }
 
   ['btnUp','btnUpD'].forEach(id=>{const b=document.getElementById(id); if(b){
-    const sz = ctrlVisible && portrait ? Math.min(58, Math.max(50, Math.round(ctrlH*0.34))) : 64;
+    const sz = (ctrlVisible && portrait) ? Math.min(62, Math.max(54, Math.round(ctrlH*0.32))) : Math.min(64, Math.max(52, Math.round(vh*0.16)));
     b.style.width=sz+'px'; b.style.height=sz+'px'; b.style.fontSize=Math.round(sz*0.45)+'px';
   }});
   ['btnFire','btnFireD'].forEach(id=>{const b=document.getElementById(id); if(b){
-    const sz = ctrlVisible && portrait ? Math.min(72, Math.max(62, Math.round(ctrlH*0.43))) : 80;
+    const sz = (ctrlVisible && portrait) ? Math.min(78, Math.max(68, Math.round(ctrlH*0.40))) : Math.min(80, Math.max(62, Math.round(vh*0.20)));
     b.style.width=sz+'px'; b.style.height=sz+'px'; b.style.fontSize=Math.round(sz*0.40)+'px';
   }});
 
+  // D-pad butonları portraitte daha kompakt kalsın.
+  ['btnLeft','btnRight'].forEach(id=>{const b=document.getElementById(id); if(b){
+    const sz = (ctrlVisible && portrait) ? 58 : Math.min(72, Math.max(56, Math.round(vh*0.18)));
+    b.style.width=sz+'px'; b.style.height=sz+'px'; b.style.fontSize=Math.round(sz*0.42)+'px';
+  }});
+
   // Overlay'ler her zaman tüm görünen ekranı kaplasın.
-  ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
+  ['ov','charSelectOv','ctrlSelectOv','mapOv','trans','settingsOv'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
       el.style.width='100vw';

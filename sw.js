@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // PANGOLIER — Service Worker (PWA Offline Cache)
 // ═══════════════════════════════════════════════════
-const CACHE = 'pangolier-v7-responsive-portrait-landscape';
+const CACHE = 'pangolier-v8-360x640-responsive';
 
 // Offline çalışması için önbelleğe alınacak dosyalar
 const ASSETS = [
