@@ -131,3 +131,95 @@ body.game-landscape-required #charSelectOv,
 body.game-landscape-required #ctrlSelectOv{
   max-width:none;
 }
+
+/* Landscape oyun tam ekran + kontrol görünürlük fix */
+html,body{overflow:hidden!important;max-width:100vw!important;max-height:var(--app-height,100vh)!important;}
+#gc{overflow:hidden!important;}
+#c{margin:0 auto!important;}
+#mctrl{z-index:80!important;}
+#mctrl *{touch-action:none!important;}
+#joyCvsWrap,#dpadWrap{position:absolute!important;inset:0!important;pointer-events:none!important;}
+#joyCanvas{position:absolute!important;pointer-events:all!important;}
+#btnUp,#btnFire,#btnUpD,#btnFireD,#btnLeft,#btnRight{pointer-events:all!important;-webkit-tap-highlight-color:transparent!important;}
+@media (orientation:landscape){
+  body.game-landscape-required #c{width:100vw!important;height:var(--app-height,100vh)!important;max-width:100vw!important;max-height:var(--app-height,100vh)!important;object-fit:fill!important;}
+  body.game-landscape-required #mctrl{display:block;position:absolute!important;left:0!important;right:0!important;top:0!important;width:100vw!important;height:var(--app-height,100vh)!important;pointer-events:none!important;}
+  body.game-landscape-required #joyCanvas{left:18px!important;bottom:14px!important;}
+  body.game-landscape-required #dpadWrap>div:first-child{left:18px!important;bottom:14px!important;}
+  body.game-landscape-required #joyCvsWrap>div,
+  body.game-landscape-required #dpadWrap>div:last-child{right:18px!important;bottom:14px!important;}
+}
+@media (orientation:portrait){
+  body.game-landscape-required #c{width:100vw!important;height:calc(var(--app-height,100vh) - 220px)!important;max-width:100vw!important;object-fit:fill!important;}
+  body.game-landscape-required #mctrl{display:block;position:absolute!important;left:0!important;right:0!important;top:calc(var(--app-height,100vh) - 220px)!important;width:100vw!important;height:220px!important;pointer-events:none!important;}
+}
+
+/* Landscape play screen hard fix v3 */
+body.game-landscape-required #gc{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:var(--app-height,100vh)!important;
+  overflow:hidden!important;
+  background:#000!important;
+  display:block!important;
+}
+body.game-landscape-required #c{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+}
+body.game-landscape-required #mctrl{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  width:100vw!important;
+  z-index:50!important;
+  pointer-events:none!important;
+}
+body.game-landscape-required #joyCvsWrap,
+body.game-landscape-required #dpadWrap{
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+}
+body.game-landscape-required #joyCanvas,
+body.game-landscape-required #btnLeft,
+body.game-landscape-required #btnRight,
+body.game-landscape-required #btnUp,
+body.game-landscape-required #btnUpD,
+body.game-landscape-required #btnFire,
+body.game-landscape-required #btnFireD{
+  pointer-events:all!important;
+  touch-action:none!important;
+}
+
+/* Orientation flow fix v4: menu portrait, adventure landscape */
+#rotatePortraitOv,#rotateLandscapeOv{
+  position:fixed!important;
+  inset:0!important;
+  z-index:99999!important;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.94);
+  color:#fff;
+  text-align:center;
+  font-family:'Courier New',monospace;
+  pointer-events:all;
+}
+.rotatePhoneBox{
+  width:min(320px,86vw);
+  padding:22px 18px;
+  border:2px solid rgba(255,215,0,.75);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(18,18,42,.96),rgba(7,7,20,.98));
+  box-shadow:0 0 34px rgba(255,215,0,.22);
+}
+.rotatePhoneIcon{font-size:48px;margin-bottom:10px;filter:drop-shadow(0 0 12px #ffd700)}
+.rotatePhoneTitle{font-size:17px;color:#ffd700;font-weight:bold;letter-spacing:1px;margin-bottom:8px}
+.rotatePhoneText{font-size:12px;color:#ddd;line-height:1.5}
+body.menu-portrait-mode #mctrl{display:none!important}
