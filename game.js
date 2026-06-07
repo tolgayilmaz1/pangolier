@@ -4664,3 +4664,184 @@ setTimeout(()=>ensureSettingsUI(),500);
     };
   }
 })();
+
+// ═══════════════════════════════════════════════════
+// LANDSCAPE GAME LOCK PATCH
+// Ana menü portrait serbest. Oyun başlarken/yürürken landscape zorunlu.
+// ═══════════════════════════════════════════════════
+(function(){
+  let pendingControllerStart = null;
+  let waitingForLandscape = false;
+  let pausedByRotateGate = false;
+  let landscapeGameMode = false;
+
+  function isTouchDevice(){
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+  }
+
+  function isPortraitNow(){
+    const vv = window.visualViewport;
+    const w = Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 0);
+    const h = Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0);
+    return h > w;
+  }
+
+  function ensureRotateOverlay(){
+    let ov = document.getElementById('rotateLandscapeOv');
+    if(ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'rotateLandscapeOv';
+    ov.innerHTML = `
+      <div class="rotatePhoneBox">
+        <div class="rotatePhoneIcon">📱↔️</div>
+        <div class="rotatePhoneTitle">TELEFONU YATAY ÇEVİR</div>
+        <div class="rotatePhoneText">Bu oyun landscape modda oynanır.</div>
+      </div>`;
+    (document.getElementById('gc') || document.body).appendChild(ov);
+    return ov;
+  }
+
+  function showRotateOverlay(){
+    const ov = ensureRotateOverlay();
+    ov.style.display = 'flex';
+  }
+
+  function hideRotateOverlay(){
+    const ov = document.getElementById('rotateLandscapeOv');
+    if(ov) ov.style.display = 'none';
+  }
+
+  async function requestLandscapeMode(){
+    try{
+      const el = document.documentElement;
+      if(!document.fullscreenElement && el.requestFullscreen){
+        await el.requestFullscreen().catch(()=>{});
+      }
+    }catch(e){}
+    try{
+      if(screen.orientation && screen.orientation.lock){
+        await screen.orientation.lock('landscape').catch(()=>{});
+      }
+    }catch(e){}
+  }
+
+  function unlockOrientationForMenu(){
+    landscapeGameMode = false;
+    pendingControllerStart = null;
+    waitingForLandscape = false;
+    pausedByRotateGate = false;
+    hideRotateOverlay();
+    document.body.classList.remove('game-landscape-required');
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+  }
+
+  function enableLandscapeForGame(){
+    landscapeGameMode = true;
+    document.body.classList.add('game-landscape-required');
+  }
+
+  function canResumeGameLoop(){
+    const ov = document.getElementById('ov');
+    const settings = document.getElementById('settingsOv');
+    const menuHidden = !ov || ov.style.display === 'none';
+    const settingsHidden = !settings || settings.style.display === 'none';
+    return landscapeGameMode && menuHidden && settingsHidden && typeof player !== 'undefined' && !!player;
+  }
+
+  function updateLandscapeGate(){
+    if(!landscapeGameMode || !isTouchDevice()){
+      hideRotateOverlay();
+      return;
+    }
+
+    if(isPortraitNow()){
+      showRotateOverlay();
+      if(typeof running !== 'undefined' && running){
+        pausedByRotateGate = true;
+        running = false;
+        try{ if(typeof rafGame !== 'undefined' && rafGame){ cancelAnimationFrame(rafGame); rafGame = null; } }catch(e){}
+      }
+      return;
+    }
+
+    hideRotateOverlay();
+
+    if(pendingControllerStart){
+      const type = pendingControllerStart;
+      pendingControllerStart = null;
+      waitingForLandscape = false;
+      try{ __pangStartWithControllerLandscapeBase(type); }catch(e){ console.error(e); }
+      return;
+    }
+
+    if(pausedByRotateGate){
+      pausedByRotateGate = false;
+      if(canResumeGameLoop()){
+        try{
+          running = true;
+          if(typeof _lastFrameTime !== 'undefined') _lastFrameTime = 0;
+          if(typeof rafGame !== 'undefined' && !rafGame) rafGame = requestAnimationFrame(loop);
+        }catch(e){}
+      }
+    }
+  }
+
+  const __pangStartWithControllerLandscapeBase = startWithController;
+  window.__pangStartWithControllerLandscapeBase = __pangStartWithControllerLandscapeBase;
+  startWithController = function(type){
+    enableLandscapeForGame();
+    resumeAC();
+    requestLandscapeMode();
+
+    if(isTouchDevice() && isPortraitNow()){
+      pendingControllerStart = type;
+      waitingForLandscape = true;
+      try{ hideControllerSelect(); }catch(e){}
+      try{ hideMenu(); }catch(e){}
+      try{ document.getElementById('mctrl').style.display = 'none'; }catch(e){}
+      showRotateOverlay();
+      setTimeout(updateLandscapeGate, 250);
+      setTimeout(updateLandscapeGate, 800);
+      return;
+    }
+
+    __pangStartWithControllerLandscapeBase(type);
+    setTimeout(updateLandscapeGate, 80);
+    setTimeout(updateLandscapeGate, 350);
+  };
+
+  if(typeof showMenu === 'function'){
+    const __pangShowMenuLandscapeBase = showMenu;
+    showMenu = function(){
+      unlockOrientationForMenu();
+      return __pangShowMenuLandscapeBase.apply(this, arguments);
+    };
+  }
+
+  if(typeof softReturnToMainMenu === 'function'){
+    const __pangSoftReturnLandscapeBase = softReturnToMainMenu;
+    softReturnToMainMenu = function(){
+      unlockOrientationForMenu();
+      return __pangSoftReturnLandscapeBase.apply(this, arguments);
+    };
+  }
+
+  if(typeof showGameOver === 'function'){
+    const __pangGameOverLandscapeBase = showGameOver;
+    showGameOver = function(){
+      hideRotateOverlay();
+      return __pangGameOverLandscapeBase.apply(this, arguments);
+    };
+  }
+
+  window.addEventListener('resize', updateLandscapeGate);
+  window.addEventListener('orientationchange', ()=>{
+    setTimeout(updateLandscapeGate, 120);
+    setTimeout(updateLandscapeGate, 450);
+  });
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', updateLandscapeGate);
+  }
+  document.addEventListener('fullscreenchange', ()=>setTimeout(updateLandscapeGate, 160));
+  document.addEventListener('webkitfullscreenchange', ()=>setTimeout(updateLandscapeGate, 160));
+})();
