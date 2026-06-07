@@ -4655,3 +4655,24 @@ function updateSettingsTexts(){
   const ga=document.getElementById('btnGoAgain'); if(ga)ga.textContent=t('play');
 }
 setTimeout(()=>ensureSettingsUI(),500);
+
+
+// Android/WebView layout safety patch
+(function(){
+  const _showMenuLayout = typeof showMenu==='function' ? showMenu : null;
+  if(_showMenuLayout){
+    showMenu=function(){
+      _showMenuLayout.apply(this,arguments);
+      setTimeout(()=>{try{resize()}catch(e){}},30);
+      setTimeout(()=>{try{resize()}catch(e){}},250);
+    };
+  }
+  const _startWithControllerLayout = typeof startWithController==='function' ? startWithController : null;
+  if(_startWithControllerLayout){
+    startWithController=function(type){
+      _startWithControllerLayout.apply(this,arguments);
+      setTimeout(()=>{try{resize()}catch(e){}},30);
+      setTimeout(()=>{try{resize()}catch(e){}},300);
+    };
+  }
+})();

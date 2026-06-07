@@ -12,45 +12,58 @@ const CTRL_H_PX = 190;
 
 function resize(){
   const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const vw=window.innerWidth;
-  const vh=window.innerHeight;
+  const vv=window.visualViewport;
+  const vw=Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 640);
+  const vh=Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 480);
+  document.documentElement.style.setProperty('--app-height', vh+'px');
 
-  // Joystick görünüyorsa, canvas ona yer açarak küçülür;
-  // joystick canvas'ın üstüne BINMEZ.
-  const ctrlH = isTouch ? CTRL_H_PX : 0;
-  const availH = vh - ctrlH;
+  const mctrl=document.getElementById('mctrl');
+  const ctrlVisible = !!(isTouch && mctrl && getComputedStyle(mctrl).display !== 'none');
+  const ctrlH = ctrlVisible ? Math.min(190, Math.max(120, Math.round(vh*0.28))) : 0;
+  const availH = Math.max(260, vh - ctrlH);
 
-  // Aspect-ratio'yu koru, mevcut alana sığdır
+  // Canvas oyunun kendi oranını korur. Menüde joystick payı ayırma YOK.
+  // Eski bug: Android portrait'te daha oyun başlamadan 190px joystick payı ayrılıyordu,
+  // overlay 290px'e düşüyor ve PLAY/menü aşağıda siyah alanda kayboluyordu.
   const s=Math.min(vw/GW, availH/GH);
-  const cw=Math.round(GW*s);
-  const ch=Math.round(GH*s);
+  const cw=Math.max(260, Math.round(GW*s));
+  const ch=Math.max(195, Math.round(GH*s));
 
   C.style.width=cw+'px';
   C.style.height=ch+'px';
+  C.style.maxWidth='100vw';
+  C.style.maxHeight=availH+'px';
 
   const gc=document.getElementById('gc');
-  gc.style.width=cw+'px';
-  // gc tüm dikey alanı kaplar (canvas + joystick bölgesi)
-  gc.style.height=(ch+ctrlH)+'px';
-  gc.style.position='relative';
+  if(gc){
+    gc.style.position='fixed';
+    gc.style.left='0';
+    gc.style.top='0';
+    gc.style.width='100vw';
+    gc.style.height=vh+'px';
+    gc.style.minHeight=vh+'px';
+    gc.style.overflow='hidden';
+    gc.style.background='#000';
+  }
 
-  // mctrl: canvas bitişinden başlar, canvas'ı KAPATMAZ
-  const mctrl=document.getElementById('mctrl');
   if(mctrl){
-    mctrl.style.height=CTRL_H_PX+'px';
-    mctrl.style.top=ch+'px';
+    mctrl.style.height=ctrlH+'px';
+    mctrl.style.top=ctrlVisible ? ch+'px' : '0px';
     mctrl.style.bottom='auto';
     mctrl.style.left='0';
     mctrl.style.right='0';
+    mctrl.style.width='100vw';
     mctrl.style.position='absolute';
   }
 
-  // Overlay'ler position:absolute;inset:0 ile gc'yi takip eder.
-  // gc doğru boyutta olduğundan sadece width yeterli;
-  // height'i JS ile set etmek inset:0'ı bozar.
+  // Menü/harita/geçiş overlay'leri her zaman tüm görünen ekranı kaplasın.
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){ el.style.width=cw+'px'; el.style.height=ch+'px'; }
+    if(el){
+      el.style.width='100vw';
+      el.style.height=vh+'px';
+      el.style.maxHeight=vh+'px';
+    }
   });
 }
 resize();

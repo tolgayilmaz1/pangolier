@@ -1,10 +1,10 @@
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;height:100dvh;overflow:hidden;background:#000}
+html,body{width:100%;height:100%;height:var(--app-height,100vh);overflow:hidden;background:#000}
 body{touch-action:none;font-family:'Courier New',monospace}
 
 #gc{
   position:fixed;top:0;left:0;
-  width:100vw;height:100vh;height:100dvh;
+  width:100vw;height:var(--app-height,100vh);
   background:#000;
   display:flex;
   flex-direction:column;
@@ -59,3 +59,21 @@ canvas{display:block;touch-action:none;flex-shrink:0}
 #transTitle{font-size:18px;color:#ffd700;letter-spacing:2px;margin-bottom:8px;text-align:center}
 #transText{font-size:12px;color:#aaa;max-width:300px;line-height:1.9;text-align:center}
 #hiList div{padding:3px 0;border-bottom:1px solid #111}
+
+
+/* Android/WebView portrait fix: menü artık ekranın tamamını kaplar */
+#ov{min-height:var(--app-height,100vh);height:var(--app-height,100vh);}
+#gc{height:var(--app-height,100vh)!important;min-height:var(--app-height,100vh)!important;}
+
+@media (orientation:portrait){
+  #ov{padding:calc(env(safe-area-inset-top,0px) + 6px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);justify-content:flex-start;gap:2px;}
+  #logo{width:min(82vw,300px)!important;height:auto!important;max-height:96px!important;margin-bottom:0!important;}
+  #langBar{margin-bottom:3px!important;gap:6px!important;}
+  #langBar button{padding:5px 11px!important;font-size:10px!important;}
+  #btnStart{padding:11px 0!important;font-size:13px!important;margin-top:6px!important;max-width:250px!important;}
+  .tb{padding:4px 10px!important;font-size:10px!important;}
+  .panel{width:min(330px,94vw)!important;}
+  #pCred{height:145px!important;}
+  #hiList{max-height:170px;overflow:auto;}
+  #nameFirstInput{padding:7px 10px!important;font-size:12px!important;}
+}

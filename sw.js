@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // PANGOLIER — Service Worker (PWA Offline Cache)
 // ═══════════════════════════════════════════════════
-const CACHE = 'pangolier-v5-global-hiscore';
+const CACHE = 'pangolier-v6-android-menu-fix';
 
 // Offline çalışması için önbelleğe alınacak dosyalar
 const ASSETS = [
