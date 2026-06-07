@@ -19,20 +19,43 @@ function resize(){
 
   const mctrl=document.getElementById('mctrl');
   const ctrlVisible = !!(isTouch && mctrl && getComputedStyle(mctrl).display !== 'none');
-  const ctrlH = ctrlVisible ? Math.min(190, Math.max(120, Math.round(vh*0.28))) : 0;
-  const availH = Math.max(260, vh - ctrlH);
+  const portrait = vh >= vw;
 
-  // Canvas oyunun kendi oranını korur. Menüde joystick payı ayırma YOK.
-  // Eski bug: Android portrait'te daha oyun başlamadan 190px joystick payı ayrılıyordu,
-  // overlay 290px'e düşüyor ve PLAY/menü aşağıda siyah alanda kayboluyordu.
-  const s=Math.min(vw/GW, availH/GH);
-  const cw=Math.max(260, Math.round(GW*s));
-  const ch=Math.max(195, Math.round(GH*s));
+  // Mobilde oyun küçük kalmasın:
+  // Portrait: canvas ekranın genişliğini ve joystick dışındaki tüm yüksekliği doldurur.
+  // Landscape: canvas tüm ekranı doldurur, kontroller oyun üstünde kalır.
+  let ctrlH = 0;
+  let gameW = vw;
+  let gameH = vh;
+
+  if(ctrlVisible && portrait){
+    ctrlH = Math.min(190, Math.max(145, Math.round(vh*0.22)));
+    gameH = Math.max(360, vh - ctrlH - Math.round((window.navigator.standalone?0:0)));
+  } else if(ctrlVisible && !portrait){
+    ctrlH = 0;
+    gameH = vh;
+  } else {
+    // Menü / harita / geçiş ekranlarında kontrol alanı ayırma yok.
+    ctrlH = 0;
+    gameH = vh;
+  }
+
+  // Menüde 4:3 oranını koru; oyun sırasında mobilde alanı doldur.
+  let cw, ch;
+  if(ctrlVisible && isTouch){
+    cw = vw;
+    ch = Math.max(260, Math.min(gameH, vh));
+  } else {
+    const s=Math.min(vw/GW, vh/GH);
+    cw=Math.max(260, Math.round(GW*s));
+    ch=Math.max(195, Math.round(GH*s));
+  }
 
   C.style.width=cw+'px';
   C.style.height=ch+'px';
   C.style.maxWidth='100vw';
-  C.style.maxHeight=availH+'px';
+  C.style.maxHeight=gameH+'px';
+  C.style.alignSelf='center';
 
   const gc=document.getElementById('gc');
   if(gc){
@@ -44,11 +67,14 @@ function resize(){
     gc.style.minHeight=vh+'px';
     gc.style.overflow='hidden';
     gc.style.background='#000';
+    gc.style.alignItems='center';
+    gc.style.justifyContent='flex-start';
   }
 
   if(mctrl){
-    mctrl.style.height=ctrlH+'px';
-    mctrl.style.top=ctrlVisible ? ch+'px' : '0px';
+    mctrl.style.display = ctrlVisible ? 'block' : mctrl.style.display;
+    mctrl.style.height=(portrait ? ctrlH : vh)+'px';
+    mctrl.style.top=ctrlVisible ? (portrait ? ch+'px' : '0px') : '0px';
     mctrl.style.bottom='auto';
     mctrl.style.left='0';
     mctrl.style.right='0';
@@ -56,7 +82,26 @@ function resize(){
     mctrl.style.position='absolute';
   }
 
-  // Menü/harita/geçiş overlay'leri her zaman tüm görünen ekranı kaplasın.
+  // Joystick canvas biraz büyüsün ama alt alanı taşırmasın.
+  const joy=document.getElementById('joyCanvas');
+  if(joy){
+    const js = ctrlVisible && portrait ? Math.min(150, Math.max(118, ctrlH-22)) : Math.min(150, Math.max(112, Math.round(vh*0.22)));
+    joy.style.width=js+'px';
+    joy.style.height=js+'px';
+    joy.style.left='10px';
+    joy.style.bottom='8px';
+  }
+
+  ['btnUp','btnUpD'].forEach(id=>{const b=document.getElementById(id); if(b){
+    const sz = ctrlVisible && portrait ? Math.min(58, Math.max(50, Math.round(ctrlH*0.34))) : 64;
+    b.style.width=sz+'px'; b.style.height=sz+'px'; b.style.fontSize=Math.round(sz*0.45)+'px';
+  }});
+  ['btnFire','btnFireD'].forEach(id=>{const b=document.getElementById(id); if(b){
+    const sz = ctrlVisible && portrait ? Math.min(72, Math.max(62, Math.round(ctrlH*0.43))) : 80;
+    b.style.width=sz+'px'; b.style.height=sz+'px'; b.style.fontSize=Math.round(sz*0.40)+'px';
+  }});
+
+  // Overlay'ler her zaman tüm görünen ekranı kaplasın.
   ['ov','charSelectOv','ctrlSelectOv','mapOv','trans'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){

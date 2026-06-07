@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // PANGOLIER — Service Worker (PWA Offline Cache)
 // ═══════════════════════════════════════════════════
-const CACHE = 'pangolier-v6-android-menu-fix';
+const CACHE = 'pangolier-v7-responsive-portrait-landscape';
 
 // Offline çalışması için önbelleğe alınacak dosyalar
 const ASSETS = [

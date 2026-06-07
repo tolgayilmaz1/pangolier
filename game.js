@@ -991,23 +991,9 @@ function enterGameFullscreen(){
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
   if(req){
-    req.call(el).then(()=>{
-      // Yatay modu kilitle (landscape) — bazı Android cihazlarda desteklenir
-      if(screen.orientation && screen.orientation.lock){
-        screen.orientation.lock('landscape').catch(()=>{});
-      }
-    }).catch(()=>{
-      // Tam ekran reddedilirse landscape'i yine de dene
-      if(screen.orientation && screen.orientation.lock){
-        screen.orientation.lock('landscape').catch(()=>{});
-      }
-    });
-  } else {
-    // iOS Safari vb — sadece orientation dene
-    if(screen.orientation && screen.orientation.lock){
-      screen.orientation.lock('landscape').catch(()=>{});
-    }
+    req.call(el).catch(()=>{});
   }
+  // Portrait ve landscape ikisi de desteklensin diye orientation lock yok.
 }
 
 // Tam ekrandan çıkıldığında (örn. geri tuşu) menü yeniden boyutlandırma
@@ -1034,6 +1020,8 @@ function startWithController(type){
     document.getElementById('mctrl').style.display='block';
     document.getElementById('joyCvsWrap').style.display = type==='joystick'?'block':'none';
     document.getElementById('dpadWrap').style.display   = type==='dpad'?'flex':'none';
+    setTimeout(()=>{try{resize()}catch(e){}}, 30);
+    setTimeout(()=>{try{resize()}catch(e){}}, 250);
   }
   initGame(); setBGMWorld(0);
   const w=WORLDS[0];
