@@ -71,42 +71,302 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
 // i18n
 // ═══════════════════════════════════════════════════
 const I18N={
-  tr:{
-    score:'SKOR',lives:'CAN',level:'BÖLÜM',start:'▶ MACERAYA BAŞLA',
-    hiscore:'🏆 EN YÜKSEK SKORLAR',clear:'Sıfırla',
-    controls:'← → Hareket | SPACE Mızrak ateşle\n↑/W Zıpla | Balon ipe değince hasar alır',
-    gameOver:'OYUN BİTTİ',newRecord:'YENİ REKOR!',
-    play:'▶ OYNA',hi:'🏆 EN İYİ',cred:'ℹ YAPIMCILAR',
-    noScore:'Henüz skor yok.',
+  "tr": {
+    "score": "SKOR",
+    "lives": "CAN",
+    "level": "BÖLÜM",
+    "start": "▶ MACERAYA BAŞLA",
+    "hiscore": "🏆 EN YÜKSEK SKORLAR",
+    "clear": "Sıfırla",
+    "controls": "← → Hareket | SPACE Mızrak ateşle\n↑/W Zıpla",
+    "gameOver": "OYUN BİTTİ",
+    "newRecord": "YENİ REKOR!",
+    "play": "▶ OYNA",
+    "hi": "🏆 EN İYİ",
+    "cred": "ℹ YAPIMCILAR",
+    "noScore": "Henüz skor yok.",
+    "settings": "⚙ AYARLAR",
+    "mainMenu": "🏠 ANA MENÜ",
+    "resume": "▶ DEVAM",
+    "music": "Müzik",
+    "language": "Dil"
   },
-  en:{
-    score:'SCORE',lives:'LIVES',level:'LEVEL',start:'▶ START ADVENTURE',
-    hiscore:'🏆 HIGH SCORES',clear:'Clear',
-    controls:'← → Move | SPACE Fire\n↑/W Jump | Balloon touching rope = damage',
-    gameOver:'GAME OVER',newRecord:'NEW RECORD!',
-    play:'▶ PLAY',hi:'🏆 BEST',cred:'ℹ CREDITS',
-    noScore:'No scores yet.',
+  "en": {
+    "score": "SCORE",
+    "lives": "LIVES",
+    "level": "LEVEL",
+    "start": "▶ START ADVENTURE",
+    "hiscore": "🏆 HIGH SCORES",
+    "clear": "Clear",
+    "controls": "← → Move | SPACE Fire\n↑/W Jump",
+    "gameOver": "GAME OVER",
+    "newRecord": "NEW RECORD!",
+    "play": "▶ PLAY",
+    "hi": "🏆 BEST",
+    "cred": "ℹ CREDITS",
+    "noScore": "No scores yet.",
+    "settings": "⚙ SETTINGS",
+    "mainMenu": "🏠 MAIN MENU",
+    "resume": "▶ RESUME",
+    "music": "Music",
+    "language": "Language"
+  },
+  "de": {
+    "score": "PUNKTE",
+    "lives": "LEBEN",
+    "level": "LEVEL",
+    "start": "▶ ABENTEUER STARTEN",
+    "hiscore": "🏆 BESTLISTE",
+    "clear": "Löschen",
+    "gameOver": "SPIEL VORBEI",
+    "newRecord": "NEUER REKORD!",
+    "play": "▶ SPIELEN",
+    "hi": "🏆 BESTE",
+    "cred": "ℹ CREDITS",
+    "noScore": "Noch keine Punkte.",
+    "settings": "⚙ EINSTELLUNGEN",
+    "mainMenu": "🏠 HAUPTMENÜ",
+    "resume": "▶ WEITER",
+    "music": "Musik",
+    "language": "Sprache"
+  },
+  "ru": {
+    "score": "СЧЁТ",
+    "lives": "ЖИЗНИ",
+    "level": "УРОВЕНЬ",
+    "start": "▶ НАЧАТЬ ПРИКЛЮЧЕНИЕ",
+    "hiscore": "🏆 РЕКОРДЫ",
+    "clear": "Очистить",
+    "gameOver": "ИГРА ОКОНЧЕНА",
+    "newRecord": "НОВЫЙ РЕКОРД!",
+    "play": "▶ ИГРАТЬ",
+    "hi": "🏆 ЛУЧШИЕ",
+    "cred": "ℹ АВТОРЫ",
+    "noScore": "Пока нет очков.",
+    "settings": "⚙ НАСТРОЙКИ",
+    "mainMenu": "🏠 ГЛАВНОЕ МЕНЮ",
+    "resume": "▶ ПРОДОЛЖИТЬ",
+    "music": "Музыка",
+    "language": "Язык"
+  },
+  "zh": {
+    "score": "得分",
+    "lives": "生命",
+    "level": "关卡",
+    "start": "▶ 开始冒险",
+    "hiscore": "🏆 最高分",
+    "clear": "清除",
+    "gameOver": "游戏结束",
+    "newRecord": "新纪录!",
+    "play": "▶ 开始",
+    "hi": "🏆 排行",
+    "cred": "ℹ 制作",
+    "noScore": "暂无分数。",
+    "settings": "⚙ 设置",
+    "mainMenu": "🏠 主菜单",
+    "resume": "▶ 继续",
+    "music": "音乐",
+    "language": "语言"
+  },
+  "ja": {
+    "score": "スコア",
+    "lives": "ライフ",
+    "level": "レベル",
+    "start": "▶ 冒険開始",
+    "hiscore": "🏆 ハイスコア",
+    "clear": "消去",
+    "gameOver": "ゲームオーバー",
+    "newRecord": "新記録!",
+    "play": "▶ プレイ",
+    "hi": "🏆 ベスト",
+    "cred": "ℹ クレジット",
+    "noScore": "スコアはまだありません。",
+    "settings": "⚙ 設定",
+    "mainMenu": "🏠 メインメニュー",
+    "resume": "▶ 続ける",
+    "music": "音楽",
+    "language": "言語"
+  },
+  "fr": {
+    "score": "SCORE",
+    "lives": "VIES",
+    "level": "NIVEAU",
+    "start": "▶ COMMENCER",
+    "hiscore": "🏆 MEILLEURS SCORES",
+    "clear": "Effacer",
+    "gameOver": "PARTIE TERMINÉE",
+    "newRecord": "NOUVEAU RECORD!",
+    "play": "▶ JOUER",
+    "hi": "🏆 MEILLEUR",
+    "cred": "ℹ CRÉDITS",
+    "noScore": "Aucun score.",
+    "settings": "⚙ PARAMÈTRES",
+    "mainMenu": "🏠 MENU PRINCIPAL",
+    "resume": "▶ CONTINUER",
+    "music": "Musique",
+    "language": "Langue"
+  },
+  "it": {
+    "score": "PUNTI",
+    "lives": "VITE",
+    "level": "LIVELLO",
+    "start": "▶ INIZIA AVVENTURA",
+    "hiscore": "🏆 PUNTEGGI MIGLIORI",
+    "clear": "Cancella",
+    "gameOver": "FINE GIOCO",
+    "newRecord": "NUOVO RECORD!",
+    "play": "▶ GIOCA",
+    "hi": "🏆 MIGLIORI",
+    "cred": "ℹ CREDITI",
+    "noScore": "Nessun punteggio.",
+    "settings": "⚙ IMPOSTAZIONI",
+    "mainMenu": "🏠 MENU PRINCIPALE",
+    "resume": "▶ CONTINUA",
+    "music": "Musica",
+    "language": "Lingua"
+  },
+  "es": {
+    "score": "PUNTOS",
+    "lives": "VIDAS",
+    "level": "NIVEL",
+    "start": "▶ EMPEZAR AVENTURA",
+    "hiscore": "🏆 MEJORES PUNTOS",
+    "clear": "Borrar",
+    "gameOver": "FIN DEL JUEGO",
+    "newRecord": "¡NUEVO RÉCORD!",
+    "play": "▶ JUGAR",
+    "hi": "🏆 MEJORES",
+    "cred": "ℹ CRÉDITOS",
+    "noScore": "Sin puntuaciones.",
+    "settings": "⚙ AJUSTES",
+    "mainMenu": "🏠 MENÚ PRINCIPAL",
+    "resume": "▶ CONTINUAR",
+    "music": "Música",
+    "language": "Idioma"
+  },
+  "ar": {
+    "score": "النقاط",
+    "lives": "الحياة",
+    "level": "المرحلة",
+    "start": "▶ ابدأ المغامرة",
+    "hiscore": "🏆 أعلى النتائج",
+    "clear": "مسح",
+    "gameOver": "انتهت اللعبة",
+    "newRecord": "رقم قياسي جديد!",
+    "play": "▶ العب",
+    "hi": "🏆 الأفضل",
+    "cred": "ℹ الشكر",
+    "noScore": "لا توجد نتائج بعد.",
+    "settings": "⚙ الإعدادات",
+    "mainMenu": "🏠 القائمة الرئيسية",
+    "resume": "▶ متابعة",
+    "music": "الموسيقى",
+    "language": "اللغة"
+  },
+  "pt": {
+    "score": "PONTOS",
+    "lives": "VIDAS",
+    "level": "NÍVEL",
+    "start": "▶ COMEÇAR AVENTURA",
+    "hiscore": "🏆 RECORDE",
+    "clear": "Limpar",
+    "gameOver": "FIM DE JOGO",
+    "newRecord": "NOVO RECORDE!",
+    "play": "▶ JOGAR",
+    "hi": "🏆 MELHORES",
+    "cred": "ℹ CRÉDITOS",
+    "noScore": "Sem pontos ainda.",
+    "settings": "⚙ CONFIGURAÇÕES",
+    "mainMenu": "🏠 MENU PRINCIPAL",
+    "resume": "▶ CONTINUAR",
+    "music": "Música",
+    "language": "Idioma"
+  },
+  "ko": {
+    "score": "점수",
+    "lives": "목숨",
+    "level": "레벨",
+    "start": "▶ 모험 시작",
+    "hiscore": "🏆 최고 점수",
+    "clear": "삭제",
+    "gameOver": "게임 오버",
+    "newRecord": "신기록!",
+    "play": "▶ 플레이",
+    "hi": "🏆 최고",
+    "cred": "ℹ 크레딧",
+    "noScore": "아직 점수가 없습니다.",
+    "settings": "⚙ 설정",
+    "mainMenu": "🏠 메인 메뉴",
+    "resume": "▶ 계속",
+    "music": "음악",
+    "language": "언어"
+  },
+  "hi": {
+    "score": "स्कोर",
+    "lives": "जीवन",
+    "level": "लेवल",
+    "start": "▶ रोमांच शुरू करें",
+    "hiscore": "🏆 हाई स्कोर",
+    "clear": "साफ़ करें",
+    "gameOver": "खेल खत्म",
+    "newRecord": "नया रिकॉर्ड!",
+    "play": "▶ खेलें",
+    "hi": "🏆 बेस्ट",
+    "cred": "ℹ क्रेडिट",
+    "noScore": "अभी कोई स्कोर नहीं।",
+    "settings": "⚙ सेटिंग्स",
+    "mainMenu": "🏠 मुख्य मेनू",
+    "resume": "▶ जारी रखें",
+    "music": "संगीत",
+    "language": "भाषा"
+  },
+  "id": {
+    "score": "SKOR",
+    "lives": "NYAWA",
+    "level": "LEVEL",
+    "start": "▶ MULAI PETUALANGAN",
+    "hiscore": "🏆 SKOR TERTINGGI",
+    "clear": "Hapus",
+    "gameOver": "GAME OVER",
+    "newRecord": "REKOR BARU!",
+    "play": "▶ MAIN",
+    "hi": "🏆 TERBAIK",
+    "cred": "ℹ KREDIT",
+    "noScore": "Belum ada skor.",
+    "settings": "⚙ PENGATURAN",
+    "mainMenu": "🏠 MENU UTAMA",
+    "resume": "▶ LANJUT",
+    "music": "Musik",
+    "language": "Bahasa"
   }
 };
 let lang=localStorage.getItem('panglang')||'en';
 function t(k){return(I18N[lang]||I18N.tr)[k]||k}
 function setLang(l){
+  if(!I18N[l])l='en';
   lang=l;localStorage.setItem('panglang',l);
-  document.getElementById('btnTR').style.background=l==='tr'?'#ff4757':'#0d0d22';
-  document.getElementById('btnTR').style.color=l==='tr'?'#fff':'#aaa';
-  document.getElementById('btnEN').style.background=l==='en'?'#ff4757':'#0d0d22';
-  document.getElementById('btnEN').style.color=l==='en'?'#fff':'#aaa';
+  document.querySelectorAll('[data-langbtn]').forEach(b=>{
+    const on=b.getAttribute('data-langbtn')===l;
+    b.style.background=on?'#ff4757':'#0d0d22';
+    b.style.color=on?'#fff':'#aaa';
+    b.style.borderColor=on?'#ff8a8a':'#333';
+  });
   applyLang();
 }
 function applyLang(){
-  
-  document.getElementById('tbHi').textContent=t('hi');
-  document.getElementById('tbCred').textContent=t('cred');
-  document.getElementById('btnStart').textContent=t('start');
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('tbHi',t('hi'));
+  set('tbCred',t('cred'));
+  set('btnStart',t('start'));
+  set('btnClear',t('clear'));
   const hiTitle=document.querySelector('#pHi > div');
   if(hiTitle)hiTitle.textContent=t('hiscore');
-  document.getElementById('btnClear').textContent=t('clear');
-  renderHi();
+  const inp=document.getElementById('nameFirstInput');
+  if(inp)inp.placeholder=(lang==='tr'?'ADINI YAZ':lang==='en'?'ENTER NAME':t('play'));
+  if(typeof updateSettingsTexts==='function')updateSettingsTexts();
+  if(typeof renderHi==='function')renderHi();
 }
 // apply on load
 setTimeout(()=>setLang(lang),0);

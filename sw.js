@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // PANGOLIER — Service Worker (PWA Offline Cache)
 // ═══════════════════════════════════════════════════
-const CACHE = 'pangolier-v1';
+const CACHE = 'pangolier-v4-audio-map-settings-lang';
 
 // Offline çalışması için önbelleğe alınacak dosyalar
 const ASSETS = [
@@ -14,7 +14,10 @@ const ASSETS = [
   '/firebase.js',
   '/manifest.json',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/assets/audio/ana_menu.ogg',
+  '/assets/audio/bolumler.ogg',
+  '/assets/audio/ara_dunya_harita.ogg'
 ];
 
 // Install — tüm asset'leri önbelleğe al

@@ -6,6 +6,8 @@ if(typeof playMapMusic==='undefined')window.playMapMusic=()=>{};
 if(typeof stopMapMusic==='undefined')window.stopMapMusic=()=>{};
 if(typeof SFX==='undefined')         window.SFX={pop:()=>{},bonus:()=>{},hit:()=>{},jump:()=>{},land:()=>{},step:()=>{},bounce:()=>{},clang:()=>{},freeze:()=>{},hook:()=>{},bomb:()=>{},die:()=>{},levelup:()=>{},fire:()=>{}};
 if(typeof setBGMWorld==='undefined')  window.setBGMWorld=()=>{};
+if(typeof startMenuMusic==='undefined')window.startMenuMusic=()=>{};
+if(typeof stopAllMusic==='undefined') window.stopAllMusic=()=>{};
 
 // ── Kayıp tanımlamalar (worlds.js'de yok, game.js'den) ──
 let mapMusicNodes=[];
@@ -1033,10 +1035,11 @@ function startWithController(type){
     document.getElementById('joyCvsWrap').style.display = type==='joystick'?'block':'none';
     document.getElementById('dpadWrap').style.display   = type==='dpad'?'flex':'none';
   }
-  initGame(); startBGM(0);
+  initGame(); setBGMWorld(0);
   const w=WORLDS[0];
+  if(typeof forceMapMusic==='function')forceMapMusic(); else if(typeof playMapMusic==='function')playMapMusic();
   showMap(null,w,lang==='tr'?'İstanbul\'dan başlıyoruz! 🗺️':'Starting in Istanbul! 🗺️',()=>{
-    showTransition(w,()=>{running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop)});
+    showTransition(w,()=>{startBGM(0);running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop)});
   });
 }
 
@@ -1057,6 +1060,80 @@ let fireCooldown=0;       // current cooldown counter (counts down)
 const FIRE_CD_BASE=38;    // base cooldown frames
 const FIRE_CD_QUICK=16;   // quickfire cooldown frames
 let tutTimer=0,bgType='istanbul',stepT=0;
+
+// ═══════════════════════════════════════════════════
+// PRODUCTION UPGRADE STATE: daily, combo, stats, achievements, speedrun, theme
+// ═══════════════════════════════════════════════════
+let combo=0,comboTimer=0,maxComboRun=0,levelHitTaken=false,runStartTs=0,runBestMs=0;
+let currentTheme=localStorage.getItem('pang_theme')||'day';
+const THEME_NAMES={day:'☀️ DAY',night:'🌙 NIGHT',retro:'🕹 RETRO',neon:'🌈 NEON'};
+const ACH_LIST=[
+  {id:'first100',tr:'İlk 100 Balon',en:'First 100 Balloons',test:s=>s.totalPops>=100},
+  {id:'combo10',tr:'Combo Ustası',en:'Combo Master',test:s=>s.bestCombo>=10},
+  {id:'survivor',tr:'Hayatta Kalan',en:'Survivor',test:s=>s.noHitLevels>=3},
+  {id:'boss1',tr:'Patron Avcısı',en:'Boss Hunter',test:s=>s.bossKills>=1},
+  {id:'speed5',tr:'Hızlı Avcı',en:'Fast Hunter',test:s=>s.bestSpeedMs>0&&s.bestSpeedMs<180000},
+];
+function loadStats(){try{return JSON.parse(localStorage.getItem('pang_stats_v1')||'{}')}catch{return{}}}
+function saveStats(s){try{localStorage.setItem('pang_stats_v1',JSON.stringify(s))}catch{}}
+function normStats(){const s=loadStats();s.totalPops=s.totalPops||0;s.bestCombo=s.bestCombo||0;s.noHitLevels=s.noHitLevels||0;s.bossKills=s.bossKills||0;s.games=s.games||0;s.bestSpeedMs=s.bestSpeedMs||0;s.ach=s.ach||{};return s}
+function haptic(ms=20){try{if(navigator.vibrate)navigator.vibrate(ms)}catch{}}
+function unlockAch(id){const st=normStats();if(st.ach[id])return;st.ach[id]=Date.now();saveStats(st);const a=ACH_LIST.find(x=>x.id===id);const txt=a?(lang==='tr'?a.tr:a.en):id;ftexts&&ftexts.push(new FText(GW/2,CEIL+58,'🏅 '+txt,'#ffd700'));showTut('🏅 '+txt,170);if(SFX.achievement)SFX.achievement();}
+function checkAchievements(){const st=normStats();ACH_LIST.forEach(a=>{if(!st.ach[a.id]&&a.test(st))unlockAch(a.id)})}
+function recordBalloonPop(b){
+  if(!b)return;
+  combo++;comboTimer=125;maxComboRun=Math.max(maxComboRun,combo);
+  const st=normStats();st.totalPops++;st.bestCombo=Math.max(st.bestCombo,combo);if(b.isBoss&&b.bossHP<=1)st.bossKills++;saveStats(st);
+  const mult=Math.min(4,combo);
+  if(combo>=2){
+    const extra=(([0,100,200,500][b.sz]||100)*(dbl>0?2:1))*(mult-1);
+    score+=extra;document.getElementById('elScore').textContent=t('score')+': '+score;
+    ftexts.push(new FText(b.x,b.y-b.r-24,'COMBO x'+mult+' +'+extra,'#ff9ff3'));
+    if(SFX.combo)SFX.combo(mult);
+  }
+  for(let k=0;k<18+Math.min(20,combo*2);k++)parts.push(new Part(b.x,b.y,b.col?b.col.f:'#ffd700'));
+  haptic(combo>=4?35:18);checkAchievements();
+}
+function drawComboHUD(){
+  if(comboTimer>0&&combo>=2){
+    const a=Math.min(1,comboTimer/30), mult=Math.min(4,combo);
+    ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold '+(20+mult*3)+'px Courier New';ctx.fillStyle='#ff9ff3';ctx.shadowColor='#ff9ff3';ctx.shadowBlur=18;
+    ctx.fillText('COMBO x'+mult,GW/2,CEIL+24);ctx.shadowBlur=0;ctx.restore();
+  }
+}
+function fmtMs(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),r=s%60;return m+':'+String(r).padStart(2,'0')}
+function drawSpeedHUD(){
+  if(!runStartTs)return;const ms=Date.now()-runStartTs;
+  ctx.save();ctx.font='bold 10px Courier New';ctx.fillStyle='#74b9ff';ctx.textAlign='right';ctx.shadowColor='#74b9ff';ctx.shadowBlur=8;
+  ctx.fillText('⏱ '+fmtMs(ms),GW-12,CEIL+18);ctx.shadowBlur=0;ctx.restore();
+}
+function applyThemeOverlay(){
+  ctx.save();
+  if(currentTheme==='night'){ctx.fillStyle='rgba(0,0,35,.28)';ctx.fillRect(0,CEIL,GW,FLOOR-CEIL)}
+  else if(currentTheme==='retro'){ctx.globalAlpha=.12;ctx.fillStyle='#d6b15e';ctx.fillRect(0,CEIL,GW,FLOOR-CEIL);for(let y=CEIL;y<FLOOR;y+=4){ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(0,y,GW,1)}}
+  else if(currentTheme==='neon'){const g=ctx.createLinearGradient(0,CEIL,GW,FLOOR);g.addColorStop(0,'rgba(255,0,150,.10)');g.addColorStop(1,'rgba(0,220,255,.10)');ctx.fillStyle=g;ctx.fillRect(0,CEIL,GW,FLOOR-CEIL)}
+  ctx.restore();
+}
+function cycleTheme(){const arr=['day','night','retro','neon'];currentTheme=arr[(arr.indexOf(currentTheme)+1)%arr.length];localStorage.setItem('pang_theme',currentTheme);showTut((lang==='tr'?'Tema: ':'Theme: ')+THEME_NAMES[currentTheme],120)}
+function dailyBonus(){
+  const today=new Date().toISOString().slice(0,10),key='pang_daily_bonus_v1';let last='';try{last=localStorage.getItem(key)||''}catch{}
+  if(last!==today){try{localStorage.setItem(key,today)}catch{};lives=Math.min(lives+1,6);shield=true;updLives();showTut(lang==='tr'?'🎁 Günlük ödül: +1 can ve kalkan!':'🎁 Daily bonus: +1 life and shield!',190);return true}
+  return false;
+}
+function renderProductionStatsHTML(){
+  const st=normStats();const fav=(selectedChar&&selectedChar.name)?selectedChar.name:'Pangolier';
+  const got=ACH_LIST.filter(a=>st.ach[a.id]).length;
+  return `<div style="margin-top:10px;border-top:1px solid #333;padding-top:8px;color:#888;font-size:10px;line-height:1.6">
+    <b style="color:#74b9ff">📊 ${lang==='tr'?'İSTATİSTİK':'STATS'}</b><br>
+    🎈 ${lang==='tr'?'Toplam balon':'Total balloons'}: <span style="color:#fff">${st.totalPops}</span><br>
+    ⚡ ${lang==='tr'?'En uzun combo':'Best combo'}: <span style="color:#ff9ff3">x${st.bestCombo}</span><br>
+    🧍 ${lang==='tr'?'Favori karakter':'Favorite hero'}: <span style="color:#ffd700">${fav}</span><br>
+    🏅 ${lang==='tr'?'Başarımlar':'Achievements'}: <span style="color:#ffd700">${got}/${ACH_LIST.length}</span><br>
+    ${ACH_LIST.map(a=>`${st.ach[a.id]?'✅':'⬛'} ${lang==='tr'?a.tr:a.en}`).join('<br>')}
+  </div>`;
+}
+
 
 const stars=Array.from({length:90},()=>({
   x:Math.random()*GW,y:CEIL+Math.random()*(FLOOR-CEIL)*.9,
@@ -2242,6 +2319,33 @@ class Balloon{
   }
 }
 
+
+// ── Boss balloon extension (every 5th level): hp bar + multi-hit behavior
+const __BalloonDrawBase=Balloon.prototype.draw;
+Balloon.prototype.draw=function(){
+  __BalloonDrawBase.call(this);
+  if(this.isBoss){
+    const hp=Math.max(0,this.bossHP||1), mx=this.bossMaxHP||hp;
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,.55)';ctx.beginPath();ctx.roundRect(this.x-45,this.y-this.r-22,90,9,4);ctx.fill();
+    ctx.fillStyle='#ff4757';ctx.beginPath();ctx.roundRect(this.x-43,this.y-this.r-20,86*(hp/mx),5,3);ctx.fill();
+    ctx.strokeStyle='#ffd700';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(this.x-45,this.y-this.r-22,90,9,4);ctx.stroke();
+    ctx.font='bold 10px Courier New';ctx.textAlign='center';ctx.fillStyle='#ffd700';ctx.shadowColor='#ffd700';ctx.shadowBlur=8;ctx.fillText('BOSS',this.x,this.y-this.r-28);ctx.shadowBlur=0;
+    ctx.restore();
+  }
+};
+const __BalloonSplitBase=Balloon.prototype.split;
+Balloon.prototype.split=function(){
+  if(this.isBoss&&this.bossHP>1){
+    this.bossHP--;this.vy=-5;this.vx+=(Math.random()<.5?-1:1)*.8;
+    this.r=Math.max(36,this.r-3);
+    ftexts.push(new FText(this.x,this.y-this.r-36,'BOSS HP '+this.bossHP,'#ff4757'));
+    parts.push(new ShockRing(this.x,this.y,'#ff4757'));
+    return [this];
+  }
+  return __BalloonSplitBase.call(this);
+};
+
 // ═══════════════════════════════════════════════════
 // MUZZLE FLASH — mızrak ucundan çıkan ateş parlaması
 // ═══════════════════════════════════════════════════
@@ -2773,7 +2877,7 @@ class Hook{
     ftexts.push(new FText(b.x,b.y-b.r-8,'+'+pts,'#ffd700'));
     const kids=b.split();balloons.splice(j,1);balloons.push(...kids);
     score+=pts;document.getElementById('elScore').textContent=t('score')+': '+score;
-    SFX.pop(b.sz);
+    SFX.pop(b.sz); recordBalloonPop(b);
     if(Math.random()<.45)bonuses.push(new Bonus(b.x,b.y,rndBonus()));
     this.phase='dying';this.dyingFrame=0;
   }
@@ -2877,7 +2981,7 @@ class Bonus{
     ftexts.push(new FText(this.x,this.y-24,desc,bt.col));
     showTut(desc,130);
     for(let i=0;i<22;i++)parts.push(new Part(this.x,this.y,bt.col));
-    SFX.bonus();
+    SFX.bonus(); haptic(25); checkAchievements();
     updatePowerBar();
   }
   draw(){
@@ -3724,6 +3828,9 @@ function drawHUDCanvas(){
   if(freeze){
     ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#a8edea';ctx.fillRect(0,CEIL,GW,FLOOR-CEIL);ctx.globalAlpha=1;ctx.restore();
   }
+  applyThemeOverlay();
+  drawComboHUD();
+  drawSpeedHUD();
 }
 
 // ═══════════════════════════════════════════════════
@@ -3731,6 +3838,7 @@ function drawHUDCanvas(){
 // ═══════════════════════════════════════════════════
 function spawnLevel(lv){
   const cfg=getLevelCfg(lv);
+  levelHitTaken=false;
 
   // Reset per-level temporary protection/power states.
   // Fixes the bug where around level 3+ the player could stay immortal
@@ -3755,6 +3863,12 @@ function spawnLevel(lv){
   }
   document.getElementById('elLevel').textContent=t('level')+' '+lv;
   const msg=getLevelMsg(lv-1);if(msg)showTut(msg,200);
+  if(lv%5===0){
+    const boss=new Balloon(GW/2,95,3,(cfg.spd+.7)*(Math.random()<.5?-1:1),0,Math.floor(Math.random()*BCOLS.length));
+    boss.isBoss=true;boss.bossMaxHP=Math.min(10,3+Math.floor(lv/5));boss.bossHP=boss.bossMaxHP;boss.r=58+Math.min(20,lv);
+    balloons.push(boss);
+    showTut((lang==='tr'?'🎯 BOSS BALONU! Sağlık çubuğunu indir!':'🎯 BOSS BALLOON! Drain the health bar!'),220);
+  }
 }
 
 function showTut(msg,dur){
@@ -3767,7 +3881,7 @@ function updLives(){
   h.textContent='❤️'.repeat(Math.max(0,lives))+(lives<3?'🖤'.repeat(Math.min(3,3-lives)):'');
 }
 function initGame(){
-  score=0;lives=3;level=1;
+  score=0;lives=3;level=1;combo=0;comboTimer=0;maxComboRun=0;levelHitTaken=false;runStartTs=Date.now();
   projs=[];parts=[];bonuses=[];ftexts=[];
   player=new Player();hitCD=0;lastShot=0;
   dbl=0;slowT=0;magT=0;shield=false;rapid=0;ghost=0;giantT=0;freeze=false;dualShot=false;
@@ -3775,7 +3889,7 @@ function initGame(){
   parallaxOff=0;bgScroll=0;stepT=0;
   _lastFrameTime=0; dt=1; // delta-time sıfırla — uzun menü beklemesi sonrası ilk frame patlamasın
   document.getElementById('elScore').textContent=t('score')+': 0';
-  updLives();updatePowerBar();spawnLevel(1);
+  updLives();spawnLevel(1);dailyBonus();updatePowerBar();
 }
 
 // ═══════════════════════════════════════════════════
@@ -3947,13 +4061,12 @@ function drawMap(cur,nxt){
 }
 
 function showMap(cur,nxt,sub,done){
+  // Önce level müziğini kapat, sonra harita müziğini aç. Tersi olursa map müziği kesilir.
+  if(typeof stopBGM==='function')stopBGM();
+  if(typeof playMapMusic==='function')playMapMusic();
   const mo=document.getElementById('mapOv');
   mo.style.display='flex';
   document.getElementById('mapSub').textContent=sub||'';
-
-  // Bölüm BGM'ini hemen kapat, harita müziğini başlat
-  stopBGM();
-  playMapMusic();
 
   function loop(){
     try{drawMap(cur,nxt)}catch(e){console.error(e)}
@@ -3963,7 +4076,7 @@ function showMap(cur,nxt,sub,done){
 
   setTimeout(()=>{
     if(mapRaf){cancelAnimationFrame(mapRaf);mapRaf=null}
-    stopMapMusic();
+    // Map müziğini burada kesme; geçiş/araç animasyonunda devam edecek.
     mo.style.display='none';
     if(done)done();
   },3300);
@@ -3987,12 +4100,13 @@ function drawVehicle(vh,fr){
   tctx.globalAlpha=1;
 }
 function showTransition(world,done){
+  if(typeof playMapMusic==='function')playMapMusic();
   transEl.style.display='flex';
   document.getElementById('transTitle').textContent='→ '+(typeof world.name==='object'?world.name[lang]:world.name).toUpperCase()+' — '+(typeof world.sub==='object'?world.sub[lang]:world.sub);
   document.getElementById('transText').textContent=typeof world.story==='object'?world.story[lang]:world.story;
   transFrame=0;
   function anim(){drawVehicle(world.vh,transFrame++);transRaf=requestAnimationFrame(anim)}anim();
-  setTimeout(()=>{if(transRaf){cancelAnimationFrame(transRaf);transRaf=null}transEl.style.display='none';if(done)done()},3500);
+  setTimeout(()=>{if(transRaf){cancelAnimationFrame(transRaf);transRaf=null}transEl.style.display='none';if(typeof stopMapMusic==='function')stopMapMusic();if(done)done()},3500);
 }
 
 // ═══════════════════════════════════════════════════
@@ -4003,14 +4117,14 @@ function showMenu(){
   document.getElementById('goScore').style.display='none';
   document.getElementById('ov').style.display='flex';
   document.getElementById('mctrl').style.display='none';
-  refreshActivePlayerLabel();if(!lRaf)animLogo();
+  resumeAC(); refreshActivePlayerLabel(); if(typeof startMenuMusic==='function')startMenuMusic(); ensureProdMenuButtons(); if(!lRaf)animLogo();
 }
 function hideMenu(){
   document.getElementById('ov').style.display='none';
   if(lRaf){cancelAnimationFrame(lRaf);lRaf=null}
 }
 function showGameOver(){
-  running=false;stopBGM();addHi(score,level);
+  running=false;(typeof stopAllMusic==='function'?stopAllMusic():stopBGM());{const st=normStats();st.games++;saveStats(st);checkAchievements();}addHi(score,level);
   const best=getHi()[0],isNew=best&&best.s===score&&getHi().filter(x=>x.s===score).length===1;
   let goF=0;
   function goAnim(){
@@ -4051,6 +4165,8 @@ function showGameOver(){
       document.getElementById('goScore').innerHTML=`Skor: <b style="color:#ffd700">${score.toLocaleString()}</b> — Bölüm: ${level}`+(isNew?' 🏆<span style="color:#ffd700"> YENİ REKOR!</span>':'');
       document.getElementById('ov').style.display='flex';
       document.getElementById('mctrl').style.display='none';
+      if(typeof startMenuMusic==='function')startMenuMusic();
+      ensureGameOverButtons();
       if(!lRaf)animLogo();
     }
   }
@@ -4087,6 +4203,7 @@ function loop(now){
   if(dbl>0)dbl-=dt;if(slowT>0)slowT-=dt;if(magT>0)magT-=dt;if(!isFinite(ghost)||ghost<0)ghost=0;if(ghost>0)ghost-=dt;if(giantT>0)giantT-=dt;
   if(quickfire>0)quickfire-=dt;if(barrierT>0)barrierT-=dt;if(clockT>0)clockT-=dt;
   if(fireCooldown>0)fireCooldown-=dt;
+  if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0)combo=0;}
   updatePowerBar();drawHUDCanvas();
 
   // ── BARRIER ─────────────────────────────────────
@@ -4109,7 +4226,7 @@ function loop(now){
         const pts=([0,100,200,500][b.sz]||0)*(dbl>0?2:1);
         score+=pts;document.getElementById('elScore').textContent=t('score')+': '+score;
         const kids=b.split();balloons.splice(j,1);balloons.push(...kids);
-        SFX.pop(b.sz);
+        SFX.pop(b.sz); recordBalloonPop(b);
         if(Math.random()<.4)bonuses.push(new Bonus(b.x,b.y,rndBonus()));
       }
     }
@@ -4158,7 +4275,7 @@ function loop(now){
           ftexts.push(new FText(b.x,b.y-b.r-8,'+'+pts,'#ffd700'));
           const kids=b.split();balloons.splice(j,1);balloons.push(...kids);
           score+=pts;document.getElementById('elScore').textContent=t('score')+': '+score;
-          SFX.pop(b.sz);
+          SFX.pop(b.sz); recordBalloonPop(b);
           if(Math.random()<.45)bonuses.push(new Bonus(b.x,b.y,rndBonus()));
           // impact at hit point (tip or mid)
           if(p instanceof Proj){
@@ -4184,7 +4301,7 @@ function loop(now){
           ftexts.push(new FText(player.x,player.y,'🛡 KALKAN!','#a29bfe'));
           SFX.bonus();
         } else {
-          lives--;updLives();player.inv=100;hitCD=55;SFX.hit();
+          lives--;levelHitTaken=true;updLives();player.inv=100;hitCD=55;SFX.hit();haptic(70);
           if(lives<=0){SFX.die();setTimeout(()=>showGameOver(),300);running=false;return}
         }
       }
@@ -4222,6 +4339,7 @@ function loop(now){
   // Level clear
   if(balloons.length===0&&bonuses.length===0&&projs.every(p=>!(p instanceof Hook&&p.active&&(p.phase==='active'||p.phase==='extending'||p.phase==='rising')))){
     running=false;
+    {const st=normStats(); if(!levelHitTaken)st.noHitLevels++; if(level===5){const ms=Date.now()-runStartTs;if(!st.bestSpeedMs||ms<st.bestSpeedMs)st.bestSpeedMs=ms;} saveStats(st);checkAchievements();}
     const prevCfg=getLevelCfg(level),nextLv=level+1,nextCfg=getLevelCfg(nextLv);
     level++;
     if(nextCfg.wi!==prevCfg.wi){
@@ -4229,11 +4347,11 @@ function loop(now){
       const pn=typeof prevCfg.world.name==='object'?prevCfg.world.name[lang]:prevCfg.world.name;
       const nn=typeof nextCfg.world.name==='object'?nextCfg.world.name[lang]:nextCfg.world.name;
       showMap(prevCfg.world,nextCfg.world,`${nextCfg.world.vh} ${pn} → ${nn}`,()=>{
-        setBGMWorld(nextCfg.wi);startBGM(nextCfg.wi);
-        showTransition(nextCfg.world,()=>{spawnLevel(level);running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop)});
+        setBGMWorld(nextCfg.wi);
+        showTransition(nextCfg.world,()=>{spawnLevel(level);startBGM(nextCfg.wi);running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop)});
       });
     } else {
-      SFX.levelup();spawnLevel(level);running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop);
+      SFX.levelup();spawnLevel(level);const c=getLevelCfg(level);startBGM(c.wi);running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop);
     }
     return;
   }
@@ -4442,3 +4560,98 @@ addFireBtn('btnFireD');
 
 // Dokunmatik: controller seçilince doğru wrap göster (startWithController'da yapılıyor)
 // Sayfa yüklendiğinde ikisi de gizli, oyun başlayınca açılır.
+
+// ═══════════════════════════════════════════════════
+// PRODUCTION MENU UI + THEME HOTKEY
+// ═══════════════════════════════════════════════════
+function ensureProdMenuButtons(){
+  const ov=document.getElementById('ov'); if(!ov||document.getElementById('btnTheme'))return;
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:6px;margin:2px 0 7px;flex-wrap:wrap;justify-content:center';
+  row.innerHTML=`<button id="btnTheme" class="tb" style="font-size:10px">${THEME_NAMES[currentTheme]}</button><button id="btnStats" class="tb" style="font-size:10px">📊 STATS</button>`;
+  const start=document.getElementById('btnStart'); ov.insertBefore(row,start);
+  document.getElementById('btnTheme').onclick=()=>{cycleTheme();document.getElementById('btnTheme').textContent=THEME_NAMES[currentTheme];};
+  document.getElementById('btnStats').onclick=()=>{switchTab('Hi');renderHi();};
+}
+const __renderHiProd=renderHi;
+renderHi=function(){__renderHiProd();const el=document.getElementById('hiList');if(el&&!document.getElementById('prodStatsBox'))el.insertAdjacentHTML('beforeend',`<div id="prodStatsBox">${renderProductionStatsHTML()}</div>`);};
+addEventListener('keydown',e=>{if((e.key==='t'||e.key==='T')&&!e.repeat){cycleTheme();const b=document.getElementById('btnTheme');if(b)b.textContent=THEME_NAMES[currentTheme];}});
+setTimeout(()=>{ensureProdMenuButtons(); if(typeof startMenuMusic==='function')startMenuMusic(); renderHi();},300);
+
+
+// ═══════════════════════════════════════════════════
+// QUICK SETTINGS GEAR — in-game menu, sound, language, main menu
+// ═══════════════════════════════════════════════════
+function softReturnToMainMenu(){
+  running=false;
+  if(rafGame){cancelAnimationFrame(rafGame);rafGame=null;}
+  if(mapRaf){cancelAnimationFrame(mapRaf);mapRaf=null;}
+  if(transRaf){cancelAnimationFrame(transRaf);transRaf=null;}
+  const ids=['mapOv','trans','ctrlSelectOv','charSelectOv','settingsOv'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  document.getElementById('mctrl').style.display='none';
+  showMenu();
+}
+function ensureGameOverButtons(){
+  const ov=document.getElementById('ov'); if(!ov)return;
+  let row=document.getElementById('gameOverActionRow');
+  if(!row){
+    row=document.createElement('div');row.id='gameOverActionRow';row.style.cssText='display:flex;gap:8px;justify-content:center;margin:5px 0 6px';
+    row.innerHTML='<button id="btnGoMain" class="tb" style="font-size:11px">🏠 ANA MENÜ</button><button id="btnGoAgain" class="tb" style="font-size:11px">▶ TEKRAR</button>';
+    const start=document.getElementById('btnStart'); ov.insertBefore(row,start);
+  }
+  row.style.display='flex';
+  document.getElementById('btnGoMain').textContent=t('mainMenu');
+  document.getElementById('btnGoAgain').textContent=t('play');
+  document.getElementById('btnGoMain').onclick=softReturnToMainMenu;
+  document.getElementById('btnGoAgain').onclick=startGame;
+}
+function hideGameOverButtons(){const r=document.getElementById('gameOverActionRow');if(r)r.style.display='none';}
+const __showMenuBase=showMenu;
+showMenu=function(){__showMenuBase(); updateSettingsTexts();};
+const __hideMenuBase=hideMenu;
+hideMenu=function(){hideGameOverButtons();__hideMenuBase();};
+
+function ensureSettingsUI(){
+  if(document.getElementById('btnGear'))return;
+  const gc=document.getElementById('gc');
+  const gear=document.createElement('button');gear.id='btnGear';gear.textContent='⚙';
+  gear.style.cssText='position:absolute;right:8px;top:8px;z-index:1200;width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,215,0,.75);background:rgba(0,0,0,.45);color:#ffd700;font-size:18px;cursor:pointer;pointer-events:all';
+  gc.appendChild(gear);
+  const ov=document.createElement('div');ov.id='settingsOv';
+  ov.style.cssText='display:none;position:absolute;inset:0;z-index:10000;background:rgba(2,2,15,.94);align-items:center;justify-content:center;flex-direction:column;font-family:"Courier New",monospace;color:#fff;padding:14px;box-sizing:border-box';
+  const langs=[['tr','🇹🇷 TR'],['en','🇬🇧 EN'],['de','🇩🇪 DE'],['ru','🇷🇺 RU'],['zh','🇨🇳 中文'],['ja','🇯🇵 日本'],['fr','🇫🇷 FR'],['it','🇮🇹 IT'],['es','🇪🇸 ES'],['ar','🇸🇦 AR'],['pt','🇵🇹 PT'],['ko','🇰🇷 KO'],['hi','🇮🇳 HI'],['id','🇮🇩 ID']];
+  ov.innerHTML=`
+    <div id="settingsTitle" style="color:#ffd700;font-size:18px;font-weight:bold;letter-spacing:3px;margin-bottom:12px">⚙ SETTINGS</div>
+    <div style="width:min(460px,94%);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:12px;box-shadow:0 0 28px rgba(0,0,0,.45)">
+      <div id="settingsMusicLbl" style="font-size:12px;color:#ffd700;margin-bottom:6px">Music</div>
+      <input id="musicSlider" type="range" min="0" max="100" value="80" style="width:100%;accent-color:#ffd700">
+      <div id="settingsLangLbl" style="font-size:12px;color:#ffd700;margin:12px 0 8px">Language</div>
+      <div id="settingsLangGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        ${langs.map(([k,l])=>`<button data-langbtn="${k}" data-setlang="${k}" class="tb" style="font-size:10px;padding:7px 3px">${l}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+        <button id="btnSettingsResume" class="tb">▶ RESUME</button>
+        <button id="btnSettingsMain" class="tb">🏠 MAIN MENU</button>
+      </div>
+    </div>`;
+  gc.appendChild(ov);
+  gear.onclick=()=>{resumeAC();ov.style.display='flex';running=false;updateSettingsTexts();};
+  ov.querySelectorAll('[data-setlang]').forEach(b=>b.onclick=()=>setLang(b.getAttribute('data-setlang')));
+  document.getElementById('btnSettingsResume').onclick=()=>{ov.style.display='none';if(player&&document.getElementById('ov').style.display==='none'){running=true;_lastFrameTime=0;rafGame=requestAnimationFrame(loop);}};
+  document.getElementById('btnSettingsMain').onclick=softReturnToMainMenu;
+  const sl=document.getElementById('musicSlider');
+  sl.value=Math.round((typeof getMusicVolume==='function'?getMusicVolume():.8)*100);
+  sl.oninput=()=>{if(typeof setMusicVolume==='function')setMusicVolume(Number(sl.value)/100)};
+  updateSettingsTexts();setLang(lang);
+}
+function updateSettingsTexts(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('settingsTitle',t('settings'));
+  set('settingsMusicLbl',t('music'));
+  set('settingsLangLbl',t('language'));
+  set('btnSettingsResume',t('resume'));
+  set('btnSettingsMain',t('mainMenu'));
+  const gm=document.getElementById('btnGoMain'); if(gm)gm.textContent=t('mainMenu');
+  const ga=document.getElementById('btnGoAgain'); if(ga)ga.textContent=t('play');
+}
+setTimeout(()=>ensureSettingsUI(),500);
