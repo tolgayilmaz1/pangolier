@@ -4794,12 +4794,38 @@ setTimeout(()=>ensureSettingsUI(),500);
   function forceMobileControlsVisible(type){
     if(!isTouchDevice()) return;
     try{
+      type = type || selectedController || 'joystick';
       const m=document.getElementById('mctrl');
-      if(m){ m.style.display='block'; m.style.position='fixed'; m.style.inset='0'; m.style.width='100vw'; m.style.height='100vh'; m.style.pointerEvents='none'; }
+      if(m){
+        m.style.setProperty('display','block','important');
+        m.style.setProperty('position','fixed','important');
+        m.style.setProperty('inset','0','important');
+        m.style.setProperty('width','100vw','important');
+        m.style.setProperty('height','100vh','important');
+        m.style.setProperty('pointer-events','none','important');
+        m.style.setProperty('z-index','999','important');
+      }
       const joy=document.getElementById('joyCvsWrap');
       const dpad=document.getElementById('dpadWrap');
-      if(joy) joy.style.display = type==='joystick' ? 'block' : 'none';
-      if(dpad) dpad.style.display = type==='dpad' ? 'flex' : 'none';
+      if(joy){
+        joy.style.setProperty('display', type==='joystick' ? 'block' : 'none', 'important');
+        joy.style.setProperty('position','absolute','important');
+        joy.style.setProperty('inset','0','important');
+        joy.style.setProperty('pointer-events','none','important');
+      }
+      if(dpad){
+        dpad.style.setProperty('display', type==='dpad' ? 'flex' : 'none', 'important');
+        dpad.style.setProperty('position','absolute','important');
+        dpad.style.setProperty('inset','0','important');
+        dpad.style.setProperty('pointer-events','none','important');
+      }
+      ['joyCanvas','btnLeft','btnRight','btnUp','btnUpD','btnFire','btnFireD'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){
+          el.style.setProperty('pointer-events','all','important');
+          el.style.setProperty('touch-action','none','important');
+        }
+      });
     }catch(e){}
   }
 
