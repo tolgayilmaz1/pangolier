@@ -4665,55 +4665,55 @@ setTimeout(()=>ensureSettingsUI(),500);
   }
 })();
 
+
 // ═══════════════════════════════════════════════════
-// LANDSCAPE GAME LOCK PATCH
-// Ana menü portrait serbest. Oyun başlarken/yürürken landscape zorunlu.
+// SAFE ORIENTATION FLOW PATCH v5
+// Menü: portrait denenir ama tıklamalar asla bloklanmaz.
+// Macera başladıktan sonra: landscape zorunlu, yanlış yönde oyun başlamaz/durur.
 // ═══════════════════════════════════════════════════
 (function(){
-  let pendingControllerStart = null;
-  let waitingForLandscape = false;
-  let pausedByRotateGate = false;
-  let landscapeGameMode = false;
+  let gameNeedsLandscape = false;
+  let pendingControllerType = null;
+  let pausedByOrientation = false;
 
   function isTouchDevice(){
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+    return ('ontouchstart' in window) || ((navigator.maxTouchPoints||0) > 0);
   }
-
-  function isPortraitNow(){
+  function viewportSize(){
     const vv = window.visualViewport;
-    const w = Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 0);
-    const h = Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0);
-    return h > w;
+    return {
+      w: Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 0),
+      h: Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0)
+    };
   }
+  function isPortraitNow(){ const v=viewportSize(); return v.h >= v.w; }
+  function isLandscapeNow(){ const v=viewportSize(); return v.w > v.h; }
 
   function ensureRotateOverlay(){
     let ov = document.getElementById('rotateLandscapeOv');
     if(ov) return ov;
     ov = document.createElement('div');
     ov.id = 'rotateLandscapeOv';
-    ov.innerHTML = `
-      <div class="rotatePhoneBox">
-        <div class="rotatePhoneIcon">📱↔️</div>
-        <div class="rotatePhoneTitle">TELEFONU YATAY ÇEVİR</div>
-        <div class="rotatePhoneText">Bu oyun landscape modda oynanır.</div>
-      </div>`;
+    ov.innerHTML = '<div class="rotatePhoneBox"><div class="rotatePhoneIcon">📱↔️</div><div class="rotatePhoneTitle" id="rotatePhoneTitle">TELEFONU YATAY ÇEVİR</div><div class="rotatePhoneText" id="rotatePhoneText">Macera modu landscape oynanır.</div></div>';
     (document.getElementById('gc') || document.body).appendChild(ov);
     return ov;
   }
-
-  function showRotateOverlay(){
+  function showLandscapeOverlay(){
     const ov = ensureRotateOverlay();
-    ov.style.display = 'flex';
+    const title=document.getElementById('rotatePhoneTitle');
+    const text=document.getElementById('rotatePhoneText');
+    if(title) title.textContent = (typeof lang!=='undefined' && lang==='en') ? 'ROTATE YOUR PHONE' : 'TELEFONU YATAY ÇEVİR';
+    if(text) text.textContent = (typeof lang!=='undefined' && lang==='en') ? 'Adventure mode is played in landscape.' : 'Macera modu landscape oynanır.';
+    ov.style.display='flex';
+  }
+  function hideLandscapeOverlay(){
+    const ov=document.getElementById('rotateLandscapeOv');
+    if(ov) ov.style.display='none';
   }
 
-  function hideRotateOverlay(){
-    const ov = document.getElementById('rotateLandscapeOv');
-    if(ov) ov.style.display = 'none';
-  }
-
-  async function requestLandscapeMode(){
+  async function tryLockLandscape(){
     try{
-      const el = document.documentElement;
+      const el=document.documentElement;
       if(!document.fullscreenElement && el.requestFullscreen){
         await el.requestFullscreen().catch(()=>{});
       }
@@ -4724,658 +4724,132 @@ setTimeout(()=>ensureSettingsUI(),500);
       }
     }catch(e){}
   }
-
-  function unlockOrientationForMenu(){
-    landscapeGameMode = false;
-    pendingControllerStart = null;
-    waitingForLandscape = false;
-    pausedByRotateGate = false;
-    hideRotateOverlay();
-    document.body.classList.remove('game-landscape-required');
-    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
-  }
-
-  function enableLandscapeForGame(){
-    landscapeGameMode = true;
-    document.body.classList.add('game-landscape-required');
-  }
-
-  function canResumeGameLoop(){
-    const ov = document.getElementById('ov');
-    const settings = document.getElementById('settingsOv');
-    const menuHidden = !ov || ov.style.display === 'none';
-    const settingsHidden = !settings || settings.style.display === 'none';
-    return landscapeGameMode && menuHidden && settingsHidden && typeof player !== 'undefined' && !!player;
-  }
-
-  function updateLandscapeGate(){
-    if(!landscapeGameMode || !isTouchDevice()){
-      hideRotateOverlay();
-      return;
-    }
-
-    if(isPortraitNow()){
-      showRotateOverlay();
-      if(typeof running !== 'undefined' && running){
-        pausedByRotateGate = true;
-        running = false;
-        try{ if(typeof rafGame !== 'undefined' && rafGame){ cancelAnimationFrame(rafGame); rafGame = null; } }catch(e){}
-      }
-      return;
-    }
-
-    hideRotateOverlay();
-
-    if(pendingControllerStart){
-      const type = pendingControllerStart;
-      pendingControllerStart = null;
-      waitingForLandscape = false;
-      try{ __pangStartWithControllerLandscapeBase(type); }catch(e){ console.error(e); }
-      return;
-    }
-
-    if(pausedByRotateGate){
-      pausedByRotateGate = false;
-      if(canResumeGameLoop()){
-        try{
-          running = true;
-          if(typeof _lastFrameTime !== 'undefined') _lastFrameTime = 0;
-          if(typeof rafGame !== 'undefined' && !rafGame) rafGame = requestAnimationFrame(loop);
-        }catch(e){}
-      }
-    }
-  }
-
-  const __pangStartWithControllerLandscapeBase = startWithController;
-  window.__pangStartWithControllerLandscapeBase = __pangStartWithControllerLandscapeBase;
-  startWithController = function(type){
-    enableLandscapeForGame();
-    resumeAC();
-    requestLandscapeMode();
-
-    if(isTouchDevice() && isPortraitNow()){
-      pendingControllerStart = type;
-      waitingForLandscape = true;
-      try{ hideControllerSelect(); }catch(e){}
-      try{ hideMenu(); }catch(e){}
-      try{ document.getElementById('mctrl').style.display = 'none'; }catch(e){}
-      showRotateOverlay();
-      setTimeout(updateLandscapeGate, 250);
-      setTimeout(updateLandscapeGate, 800);
-      return;
-    }
-
-    __pangStartWithControllerLandscapeBase(type);
-    setTimeout(updateLandscapeGate, 80);
-    setTimeout(updateLandscapeGate, 350);
-  };
-
-  if(typeof showMenu === 'function'){
-    const __pangShowMenuLandscapeBase = showMenu;
-    showMenu = function(){
-      unlockOrientationForMenu();
-      return __pangShowMenuLandscapeBase.apply(this, arguments);
-    };
-  }
-
-  if(typeof softReturnToMainMenu === 'function'){
-    const __pangSoftReturnLandscapeBase = softReturnToMainMenu;
-    softReturnToMainMenu = function(){
-      unlockOrientationForMenu();
-      return __pangSoftReturnLandscapeBase.apply(this, arguments);
-    };
-  }
-
-  if(typeof showGameOver === 'function'){
-    const __pangGameOverLandscapeBase = showGameOver;
-    showGameOver = function(){
-      hideRotateOverlay();
-      return __pangGameOverLandscapeBase.apply(this, arguments);
-    };
-  }
-
-  window.addEventListener('resize', updateLandscapeGate);
-  window.addEventListener('orientationchange', ()=>{
-    setTimeout(updateLandscapeGate, 120);
-    setTimeout(updateLandscapeGate, 450);
-  });
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', updateLandscapeGate);
-  }
-  document.addEventListener('fullscreenchange', ()=>setTimeout(updateLandscapeGate, 160));
-  document.addEventListener('webkitfullscreenchange', ()=>setTimeout(updateLandscapeGate, 160));
-})();
-
-// ═══════════════════════════════════════════════════
-// LANDSCAPE FULLSCREEN + CONTROL VISIBILITY FIX v2
-// Fixes: canvas not fitting landscape, selected joystick/dpad hidden after map/transition.
-// ═══════════════════════════════════════════════════
-(function(){
-  const PANG_CTRL_H = 220;
-
-  function isTouchDevice(){
-    return ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
-  }
-  function vvSize(){
-    const vv = window.visualViewport;
-    return {
-      w: Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 640),
-      h: Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 360)
-    };
-  }
-  function isLandscape(){
-    const s = vvSize();
-    return s.w > s.h;
-  }
-  function menuIsVisible(){
-    const ov = document.getElementById('ov');
-    return !!(ov && getComputedStyle(ov).display !== 'none');
-  }
-  function mapOrTransitionVisible(){
-    const mapOv = document.getElementById('mapOv');
-    const trans = document.getElementById('trans');
-    return !!((mapOv && getComputedStyle(mapOv).display !== 'none') || (trans && getComputedStyle(trans).display !== 'none'));
-  }
-  function shouldShowControls(){
-    return isTouchDevice() && !menuIsVisible() && !mapOrTransitionVisible();
-  }
-
-  function fitGameToScreen(){
-    const s = vvSize();
-    document.documentElement.style.setProperty('--app-height', s.h + 'px');
-
-    const gc = document.getElementById('gc');
-    const c = document.getElementById('c');
-    const mctrl = document.getElementById('mctrl');
-    const portrait = s.h >= s.w;
-
-    if(gc){
-      gc.style.position = 'fixed';
-      gc.style.left = '0';
-      gc.style.top = '0';
-      gc.style.width = '100vw';
-      gc.style.height = s.h + 'px';
-      gc.style.minHeight = s.h + 'px';
-      gc.style.overflow = 'hidden';
-      gc.style.background = '#000';
-      gc.style.alignItems = 'center';
-      gc.style.justifyContent = 'flex-start';
-    }
-
-    if(c){
-      if(!menuIsVisible() && isTouchDevice()){
-        if(portrait){
-          const ctrlH = Math.max(205, Math.min(235, Math.round(s.h * 0.34)));
-          c.style.width = s.w + 'px';
-          c.style.height = Math.max(390, s.h - ctrlH) + 'px';
-        }else{
-          c.style.width = s.w + 'px';
-          c.style.height = s.h + 'px';
-        }
-        c.style.maxWidth = '100vw';
-        c.style.maxHeight = s.h + 'px';
-        c.style.objectFit = 'fill';
-        c.style.alignSelf = 'center';
-      }
-    }
-
-    if(mctrl){
-      const show = shouldShowControls();
-      mctrl.style.display = show ? 'block' : 'none';
-      mctrl.style.position = 'absolute';
-      mctrl.style.left = '0';
-      mctrl.style.right = '0';
-      mctrl.style.width = '100vw';
-      mctrl.style.pointerEvents = 'none';
-      if(show){
-        if(portrait){
-          const ch = c ? c.getBoundingClientRect().height : Math.max(390, s.h - PANG_CTRL_H);
-          mctrl.style.top = Math.round(ch) + 'px';
-          mctrl.style.height = Math.max(205, Math.min(235, s.h - Math.round(ch))) + 'px';
-        }else{
-          mctrl.style.top = '0px';
-          mctrl.style.height = s.h + 'px';
-        }
-      }
-    }
-
-    const joyWrap = document.getElementById('joyCvsWrap');
-    const dpadWrap = document.getElementById('dpadWrap');
-    const ctrlType = (typeof selectedController !== 'undefined') ? selectedController : 'joystick';
-    if(joyWrap) joyWrap.style.display = ctrlType === 'joystick' ? 'block' : 'none';
-    if(dpadWrap) dpadWrap.style.display = ctrlType === 'dpad' ? 'block' : 'none';
-
-    // Landscape overlay positions: controls over the game, not below it.
-    const joy = document.getElementById('joyCanvas');
-    if(joy){
-      const js = portrait ? 150 : Math.max(110, Math.min(145, Math.round(s.h * 0.34)));
-      joy.style.width = js + 'px';
-      joy.style.height = js + 'px';
-      joy.style.left = (portrait ? 10 : 18) + 'px';
-      joy.style.bottom = (portrait ? 12 : 14) + 'px';
-      joy.style.pointerEvents = 'all';
-    }
-
-    ['btnUp','btnUpD'].forEach(id=>{
-      const b = document.getElementById(id);
-      if(!b) return;
-      const sz = portrait ? 62 : Math.max(50, Math.min(62, Math.round(s.h * 0.16)));
-      b.style.width = sz + 'px';
-      b.style.height = sz + 'px';
-      b.style.fontSize = Math.round(sz * 0.45) + 'px';
-      b.style.pointerEvents = 'all';
-    });
-    ['btnFire','btnFireD'].forEach(id=>{
-      const b = document.getElementById(id);
-      if(!b) return;
-      const sz = portrait ? 78 : Math.max(62, Math.min(78, Math.round(s.h * 0.20)));
-      b.style.width = sz + 'px';
-      b.style.height = sz + 'px';
-      b.style.fontSize = Math.round(sz * 0.40) + 'px';
-      b.style.pointerEvents = 'all';
-    });
-    ['btnLeft','btnRight'].forEach(id=>{
-      const b = document.getElementById(id);
-      if(!b) return;
-      const sz = portrait ? 62 : Math.max(56, Math.min(70, Math.round(s.h * 0.18)));
-      b.style.width = sz + 'px';
-      b.style.height = sz + 'px';
-      b.style.fontSize = Math.round(sz * 0.42) + 'px';
-      b.style.pointerEvents = 'all';
-    });
-  }
-
-  const oldResize = window.resize;
-  window.resize = function(){
-    try{ if(typeof oldResize === 'function') oldResize(); }catch(e){}
-    fitGameToScreen();
-  };
-  // Some code calls bare resize(), so refresh the global binding too.
-  try{ resize = window.resize; }catch(e){}
-
-  function lateFit(){
-    fitGameToScreen();
-    setTimeout(fitGameToScreen, 80);
-    setTimeout(fitGameToScreen, 260);
-    setTimeout(fitGameToScreen, 650);
-  }
-
-  if(typeof startWithController === 'function'){
-    const base = startWithController;
-    startWithController = function(type){
-      const ret = base.apply(this, arguments);
-      lateFit();
-      return ret;
-    };
-  }
-
-  const mo = new MutationObserver(lateFit);
-  ['ov','mapOv','trans','mctrl','joyCvsWrap','dpadWrap'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) mo.observe(el, {attributes:true, attributeFilter:['style','class']});
-  });
-
-  window.addEventListener('resize', lateFit, {passive:true});
-  window.addEventListener('orientationchange', lateFit, {passive:true});
-  if(window.visualViewport) window.visualViewport.addEventListener('resize', lateFit, {passive:true});
-  setTimeout(lateFit, 0);
-})();
-
-// ═══════════════════════════════════════════════════
-// LANDSCAPE PLAY SCREEN HARD FIX v3
-// Fixes: controls disappearing after control selection, landscape canvas staying small/centered.
-// ═══════════════════════════════════════════════════
-(function(){
-  function screenSize(){
-    const vv = window.visualViewport;
-    const w = Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 640);
-    const h = Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 360);
-    return {w,h,portrait:h>=w};
-  }
-  function visible(id){
-    const el = document.getElementById(id);
-    return !!(el && getComputedStyle(el).display !== 'none' && el.style.visibility !== 'hidden');
-  }
-  function menuShowing(){
-    return visible('ov') || visible('charSelectOv') || visible('ctrlSelectOv');
-  }
-  function travelShowing(){
-    return visible('mapOv') || visible('trans') || visible('rotateLandscapeOv');
-  }
-  function gameScreenShowing(){
-    // Oyun modu açıldıktan sonra menü / harita / geçiş yoksa playable screen say.
-    return !menuShowing() && !travelShowing();
-  }
-  function forceSet(el, prop, val){
-    if(!el) return;
-    try{ el.style.setProperty(prop, val, 'important'); }catch(e){ el.style[prop] = val; }
-  }
-  function fitLandscapePlayScreen(){
-    const s = screenSize();
-    document.documentElement.style.setProperty('--app-height', s.h + 'px');
-
-    const gc = document.getElementById('gc');
-    const c = document.getElementById('c');
-    const mctrl = document.getElementById('mctrl');
-    const joyWrap = document.getElementById('joyCvsWrap');
-    const dpadWrap = document.getElementById('dpadWrap');
-    const inGame = gameScreenShowing();
-
-    if(gc){
-      forceSet(gc,'position','fixed');
-      forceSet(gc,'left','0px'); forceSet(gc,'top','0px');
-      forceSet(gc,'width','100vw'); forceSet(gc,'height',s.h+'px');
-      forceSet(gc,'min-height',s.h+'px'); forceSet(gc,'overflow','hidden');
-      forceSet(gc,'display','block'); forceSet(gc,'background','#000');
-    }
-
-    if(c && inGame){
-      // Oyun sadece landscape oynanacak. Landscape'te canvas tam ekran.
-      // Portrait'e düşerse rotate overlay devreye girer; yine de eski 16:9 küçük kutuya dönmesin.
-      const playH = s.portrait ? Math.max(390, s.h - 220) : s.h;
-      forceSet(c,'display','block');
-      forceSet(c,'position','absolute');
-      forceSet(c,'left','0px'); forceSet(c,'top','0px');
-      forceSet(c,'width',s.w+'px'); forceSet(c,'height',playH+'px');
-      forceSet(c,'max-width','none'); forceSet(c,'max-height','none');
-      forceSet(c,'object-fit','fill');
-      forceSet(c,'transform','none');
-    }
-
-    if(mctrl){
-      if(inGame){
-        forceSet(mctrl,'display','block');
-        forceSet(mctrl,'position','fixed');
-        forceSet(mctrl,'left','0px'); forceSet(mctrl,'right','0px');
-        forceSet(mctrl,'width','100vw'); forceSet(mctrl,'z-index','50');
-        forceSet(mctrl,'pointer-events','none');
-        if(s.portrait){
-          const playH = c ? Math.round(c.getBoundingClientRect().height) : Math.max(390, s.h - 220);
-          forceSet(mctrl,'top',playH+'px');
-          forceSet(mctrl,'height',Math.max(190, s.h - playH)+'px');
-        }else{
-          forceSet(mctrl,'top','0px');
-          forceSet(mctrl,'height',s.h+'px');
-        }
-      }else{
-        forceSet(mctrl,'display','none');
-      }
-    }
-
-    // Seçilen kontrol tipini her resize / map dönüşünde tekrar uygula.
-    const ctrl = (typeof selectedController !== 'undefined' && selectedController === 'dpad') ? 'dpad' : 'joystick';
-    if(joyWrap){
-      joyWrap.style.setProperty('display', (inGame && ctrl === 'joystick') ? 'block' : 'none', 'important');
-      joyWrap.style.setProperty('position','absolute','important');
-      joyWrap.style.setProperty('inset','0','important');
-      joyWrap.style.setProperty('pointer-events','none','important');
-    }
-    if(dpadWrap){
-      dpadWrap.style.setProperty('display', (inGame && ctrl === 'dpad') ? 'block' : 'none', 'important');
-      dpadWrap.style.setProperty('position','absolute','important');
-      dpadWrap.style.setProperty('inset','0','important');
-      dpadWrap.style.setProperty('pointer-events','none','important');
-    }
-
-    const joy = document.getElementById('joyCanvas');
-    if(joy){
-      const js = s.portrait ? 145 : Math.max(108, Math.min(138, Math.round(s.h * 0.36)));
-      joy.style.setProperty('width',js+'px','important');
-      joy.style.setProperty('height',js+'px','important');
-      joy.style.setProperty('left',(s.portrait?10:18)+'px','important');
-      joy.style.setProperty('bottom',(s.portrait?10:14)+'px','important');
-      joy.style.setProperty('pointer-events','all','important');
-    }
-
-    ['btnLeft','btnRight'].forEach(id=>{
-      const b=document.getElementById(id); if(!b) return;
-      const sz=s.portrait?62:Math.max(54,Math.min(66,Math.round(s.h*.18)));
-      b.style.setProperty('width',sz+'px','important');
-      b.style.setProperty('height',sz+'px','important');
-      b.style.setProperty('font-size',Math.round(sz*.42)+'px','important');
-      b.style.setProperty('pointer-events','all','important');
-    });
-    ['btnUp','btnUpD'].forEach(id=>{
-      const b=document.getElementById(id); if(!b) return;
-      const sz=s.portrait?60:Math.max(48,Math.min(60,Math.round(s.h*.16)));
-      b.style.setProperty('width',sz+'px','important');
-      b.style.setProperty('height',sz+'px','important');
-      b.style.setProperty('font-size',Math.round(sz*.45)+'px','important');
-      b.style.setProperty('pointer-events','all','important');
-    });
-    ['btnFire','btnFireD'].forEach(id=>{
-      const b=document.getElementById(id); if(!b) return;
-      const sz=s.portrait?76:Math.max(60,Math.min(76,Math.round(s.h*.21)));
-      b.style.setProperty('width',sz+'px','important');
-      b.style.setProperty('height',sz+'px','important');
-      b.style.setProperty('font-size',Math.round(sz*.40)+'px','important');
-      b.style.setProperty('pointer-events','all','important');
-    });
-  }
-
-  function refitMany(){
-    fitLandscapePlayScreen();
-    setTimeout(fitLandscapePlayScreen,60);
-    setTimeout(fitLandscapePlayScreen,220);
-    setTimeout(fitLandscapePlayScreen,600);
-  }
-
-  const oldResize2 = window.resize;
-  window.resize = function(){
-    try{ if(typeof oldResize2 === 'function') oldResize2(); }catch(e){}
-    refitMany();
-  };
-  try{ resize = window.resize; }catch(e){}
-
-  if(typeof startWithController === 'function'){
-    const baseStart = startWithController;
-    startWithController = function(type){
-      selectedController = type || selectedController || 'joystick';
-      const ret = baseStart.apply(this, arguments);
-      refitMany();
-      return ret;
-    };
-  }
-  if(typeof showTransition === 'function'){
-    const baseTrans = showTransition;
-    showTransition = function(world, done){
-      return baseTrans.call(this, world, function(){
-        if(done) done();
-        refitMany();
-      });
-    };
-  }
-  if(typeof showMap === 'function'){
-    const baseMap = showMap;
-    showMap = function(cur,nxt,sub,done){
-      return baseMap.call(this,cur,nxt,sub,function(){
-        if(done) done();
-        refitMany();
-      });
-    };
-  }
-
-  ['resize','orientationchange','fullscreenchange','webkitfullscreenchange'].forEach(ev=>{
-    window.addEventListener(ev, refitMany, {passive:true});
-    document.addEventListener(ev, refitMany, {passive:true});
-  });
-  if(window.visualViewport) window.visualViewport.addEventListener('resize', refitMany, {passive:true});
-  new MutationObserver(refitMany).observe(document.body,{subtree:true,attributes:true,attributeFilter:['style','class']});
-  setTimeout(refitMany,0);
-})();
-
-// ═══════════════════════════════════════════════════
-// ORIENTATION FLOW FIX v4
-// Menü ve oyun dışı ekranlar portrait. Macera başladıktan sonra landscape.
-// Menüye dönüşte yeniden portrait kilidi denenir.
-// ═══════════════════════════════════════════════════
-(function(){
-  let adventureLandscapeMode = false;
-
-  function touchDevice(){
-    return ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
-  }
-  function sizeNow(){
-    const vv = window.visualViewport;
-    const w = Math.round((vv && vv.width) || window.innerWidth || document.documentElement.clientWidth || 360);
-    const h = Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 640);
-    return {w,h,portrait:h >= w};
-  }
-  function visible(id){
-    const el = document.getElementById(id);
-    return !!(el && getComputedStyle(el).display !== 'none' && el.style.visibility !== 'hidden');
-  }
-  function onMainMenuLikeScreen(){
-    return visible('ov') && !visible('charSelectOv') && !visible('ctrlSelectOv') && !visible('mapOv') && !visible('trans');
-  }
-
-  function ensurePortraitOverlay(){
-    let ov = document.getElementById('rotatePortraitOv');
-    if(ov) return ov;
-    ov = document.createElement('div');
-    ov.id = 'rotatePortraitOv';
-    ov.innerHTML = '<div class="rotatePhoneBox"><div class="rotatePhoneIcon">📱↕️</div><div class="rotatePhoneTitle">TELEFONU DİKEY ÇEVİR</div><div class="rotatePhoneText">Ana menü portrait modda kullanılır.</div></div>';
-    (document.getElementById('gc') || document.body).appendChild(ov);
-    return ov;
-  }
-  function showPortraitOverlay(){ ensurePortraitOverlay().style.display = 'flex'; }
-  function hidePortraitOverlay(){ const ov=document.getElementById('rotatePortraitOv'); if(ov) ov.style.display='none'; }
-
-  function ensureLandscapeOverlay(){
-    let ov = document.getElementById('rotateLandscapeOv');
-    if(ov) return ov;
-    ov = document.createElement('div');
-    ov.id = 'rotateLandscapeOv';
-    ov.innerHTML = '<div class="rotatePhoneBox"><div class="rotatePhoneIcon">📱↔️</div><div class="rotatePhoneTitle">TELEFONU YATAY ÇEVİR</div><div class="rotatePhoneText">Macera landscape modda oynanır.</div></div>';
-    (document.getElementById('gc') || document.body).appendChild(ov);
-    return ov;
-  }
-  function showLandscapeOverlay(){ ensureLandscapeOverlay().style.display = 'flex'; }
-  function hideLandscapeOverlay(){ const ov=document.getElementById('rotateLandscapeOv'); if(ov) ov.style.display='none'; }
-
-  async function tryFullscreen(){
+  async function tryLockPortraitMenu(){
+    // Menüde fullscreen'e girmiyoruz; yoksa Android/WebView input ve butonları takılabiliyor.
+    // Destek varsa sadece nazikçe portrait kilidi dener, olmazsa sessiz geçer.
     try{
-      const el = document.documentElement;
-      if(!document.fullscreenElement && el.requestFullscreen){
-        await el.requestFullscreen().catch(()=>{});
+      if(screen.orientation && screen.orientation.lock){
+        await screen.orientation.lock('portrait').catch(()=>{});
       }
     }catch(e){}
   }
-  async function forceLandscape(){
-    document.body.classList.add('adventure-landscape-mode');
-    document.body.classList.remove('menu-portrait-mode');
-    await tryFullscreen();
-    try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}
-    setTimeout(updateOrientationFlow, 120);
-    setTimeout(updateOrientationFlow, 450);
-  }
-  async function forcePortrait(){
-    document.body.classList.remove('adventure-landscape-mode');
-    document.body.classList.add('menu-portrait-mode');
-    try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait-primary').catch(()=>{}); }catch(e){}
-    // Bazı browserlar fullscreen çıkınca orientation lock'u bırakır; o yüzden önce portrait lock deniyoruz.
-    setTimeout(updateOrientationFlow, 120);
-    setTimeout(updateOrientationFlow, 450);
+  function tryUnlock(){
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
   }
 
-  function updateOrientationFlow(){
-    if(!touchDevice()){
-      hidePortraitOverlay();
+  function forceMenuPortraitMode(){
+    gameNeedsLandscape=false;
+    pendingControllerType=null;
+    pausedByOrientation=false;
+    hideLandscapeOverlay();
+    document.body.classList.remove('game-landscape-required');
+    try{ if(typeof running!=='undefined') running=false; }catch(e){}
+    tryLockPortraitMenu();
+    setTimeout(()=>{try{resize()}catch(e){}},80);
+    setTimeout(()=>{try{resize()}catch(e){}},300);
+  }
+  function enableGameLandscapeMode(){
+    gameNeedsLandscape=true;
+    document.body.classList.add('game-landscape-required');
+  }
+
+  function canRunGameLoop(){
+    const ov=document.getElementById('ov');
+    const settings=document.getElementById('settingsOv');
+    const map=document.getElementById('mapOv');
+    const trans=document.getElementById('trans');
+    const menuHidden=!ov || ov.style.display==='none';
+    const settingsHidden=!settings || settings.style.display==='none';
+    // map/trans varsa loop şart değil; ama aktif oyun içindeysek devam edebilir.
+    return gameNeedsLandscape && menuHidden && settingsHidden && typeof player!=='undefined' && !!player;
+  }
+
+  function orientationTick(){
+    if(!gameNeedsLandscape || !isTouchDevice()){
       hideLandscapeOverlay();
       return;
     }
-    const s = sizeNow();
-
-    if(adventureLandscapeMode){
-      hidePortraitOverlay();
-      if(s.portrait){
-        showLandscapeOverlay();
-        try{
-          if(typeof running !== 'undefined' && running){
-            running = false;
-            if(typeof rafGame !== 'undefined' && rafGame){ cancelAnimationFrame(rafGame); rafGame = null; }
-          }
-        }catch(e){}
-      }else{
-        hideLandscapeOverlay();
-        try{
-          if(typeof player !== 'undefined' && player && !running && !visible('ov') && !visible('charSelectOv') && !visible('ctrlSelectOv') && !visible('mapOv') && !visible('trans')){
-            running = true;
-            if(typeof _lastFrameTime !== 'undefined') _lastFrameTime = 0;
-            if(typeof rafGame !== 'undefined' && !rafGame) rafGame = requestAnimationFrame(loop);
-          }
-        }catch(e){}
+    if(!isLandscapeNow()){
+      showLandscapeOverlay();
+      if(typeof running!=='undefined' && running){
+        pausedByOrientation=true;
+        running=false;
+        try{ if(typeof rafGame!=='undefined' && rafGame){ cancelAnimationFrame(rafGame); rafGame=null; } }catch(e){}
       }
       return;
     }
-
     hideLandscapeOverlay();
-    if(onMainMenuLikeScreen() && !s.portrait){
-      showPortraitOverlay();
-    }else{
-      hidePortraitOverlay();
-    }
-  }
-
-  // Maceraya başla: valid isimden sonra landscape moduna geçip karakter seçim ekranını aç.
-  const baseStartGamePortraitLock = window.startGame || (typeof startGame === 'function' ? startGame : null);
-  window.startGame = startGame = function(){
-    const inp=document.getElementById('nameFirstInput');
-    const warn=document.getElementById('nameWarn');
-    const raw=inp?String(inp.value||'').trim():'';
-    if(raw){playerName=cleanPlayerName(raw);try{localStorage.setItem('pangPlayerName',playerName)}catch(e){}}
-    if(!playerName||playerName==='PLAYER'){
-      if(warn){warn.textContent=lang==='tr'?'Lütfen adını yaz!':'Please enter your name!';}
-      if(inp)inp.focus();
+    if(pendingControllerType){
+      const type=pendingControllerType;
+      pendingControllerType=null;
+      try{ __pangBaseStartWithControllerSafe(type); }catch(e){ console.error(e); }
+      setTimeout(()=>{try{resize()}catch(e){}},60);
+      setTimeout(()=>{try{resize()}catch(e){}},300);
       return;
     }
-    if(warn)warn.textContent='';
-    adventureLandscapeMode = true;
-    forceLandscape();
-    try{ showCharSelect(); }catch(e){ if(baseStartGamePortraitLock) baseStartGamePortraitLock(); }
+    if(pausedByOrientation && canRunGameLoop()){
+      pausedByOrientation=false;
+      try{
+        running=true;
+        if(typeof _lastFrameTime!=='undefined') _lastFrameTime=0;
+        if(typeof rafGame!=='undefined' && !rafGame) rafGame=requestAnimationFrame(loop);
+      }catch(e){}
+    }
+  }
+
+  const __pangBaseStartWithControllerSafe = startWithController;
+  window.__pangBaseStartWithControllerSafe = __pangBaseStartWithControllerSafe;
+  startWithController = function(type){
+    enableGameLandscapeMode();
+    resumeAC();
+    tryLockLandscape();
+    if(isTouchDevice() && !isLandscapeNow()){
+      pendingControllerType=type;
+      try{ hideControllerSelect(); }catch(e){}
+      try{ hideMenu(); }catch(e){}
+      try{ const m=document.getElementById('mctrl'); if(m)m.style.display='none'; }catch(e){}
+      showLandscapeOverlay();
+      setTimeout(orientationTick,180);
+      setTimeout(orientationTick,700);
+      return;
+    }
+    __pangBaseStartWithControllerSafe(type);
+    setTimeout(orientationTick,80);
+    setTimeout(orientationTick,350);
   };
-  const btnStart = document.getElementById('btnStart');
-  if(btnStart) btnStart.onclick = startGame;
 
-  // Menüye dönen bütün yollar portrait'e dönsün.
-  if(typeof showMenu === 'function'){
-    const baseShowMenuPortraitLock = showMenu;
-    window.showMenu = showMenu = function(){
-      adventureLandscapeMode = false;
+  if(typeof showMenu==='function'){
+    const __pangBaseShowMenuSafe=showMenu;
+    showMenu=function(){
+      forceMenuPortraitMode();
+      return __pangBaseShowMenuSafe.apply(this,arguments);
+    };
+  }
+  if(typeof softReturnToMainMenu==='function'){
+    const __pangBaseSoftReturnSafe=softReturnToMainMenu;
+    softReturnToMainMenu=function(){
+      forceMenuPortraitMode();
+      return __pangBaseSoftReturnSafe.apply(this,arguments);
+    };
+  }
+  if(typeof showGameOver==='function'){
+    const __pangBaseGameOverSafe=showGameOver;
+    showGameOver=function(){
+      // Game over ekranı yine menü overlayinde gösteriliyor; burada artık input bloklama yok.
+      gameNeedsLandscape=false;
       hideLandscapeOverlay();
-      const ret = baseShowMenuPortraitLock.apply(this, arguments);
-      forcePortrait();
-      try{ if(typeof resize === 'function') resize(); }catch(e){}
-      return ret;
-    };
-  }
-  if(typeof softReturnToMainMenu === 'function'){
-    const baseSoftReturnPortraitLock = softReturnToMainMenu;
-    window.softReturnToMainMenu = softReturnToMainMenu = function(){
-      adventureLandscapeMode = false;
-      hideLandscapeOverlay();
-      const ret = baseSoftReturnPortraitLock.apply(this, arguments);
-      forcePortrait();
-      return ret;
+      tryLockPortraitMenu();
+      return __pangBaseGameOverSafe.apply(this,arguments);
     };
   }
 
-  // Game over içindeyken macera hâlâ landscape sayılır; kullanıcı ana menüye basınca showMenu portrait'e alır.
-  if(typeof showGameOver === 'function'){
-    const baseGameOverPortraitLock = showGameOver;
-    window.showGameOver = showGameOver = function(){
-      adventureLandscapeMode = true;
-      forceLandscape();
-      return baseGameOverPortraitLock.apply(this, arguments);
-    };
-  }
+  window.addEventListener('resize', orientationTick, {passive:true});
+  window.addEventListener('orientationchange', ()=>{setTimeout(orientationTick,120);setTimeout(orientationTick,450);}, {passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize', orientationTick, {passive:true});
+  document.addEventListener('fullscreenchange', ()=>setTimeout(orientationTick,150));
+  document.addEventListener('webkitfullscreenchange', ()=>setTimeout(orientationTick,150));
 
-  ['resize','orientationchange','fullscreenchange','webkitfullscreenchange'].forEach(ev=>{
-    window.addEventListener(ev, ()=>setTimeout(updateOrientationFlow,140), {passive:true});
-    document.addEventListener(ev, ()=>setTimeout(updateOrientationFlow,140), {passive:true});
-  });
-  if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>setTimeout(updateOrientationFlow,120), {passive:true});
-
-  // İlk açılış ana menü: portrait denenir.
-  setTimeout(()=>{adventureLandscapeMode=false; forcePortrait();}, 250);
+  // İlk yüklemede menü kilitlenmesin; sadece varsa eski overlayi kapat.
+  setTimeout(()=>{ if(!gameNeedsLandscape) hideLandscapeOverlay(); },120);
 })();
+
