@@ -4667,9 +4667,9 @@ setTimeout(()=>ensureSettingsUI(),500);
 
 
 // ═══════════════════════════════════════════════════
-// SAFE ORIENTATION FLOW PATCH v5
-// Menü: portrait denenir ama tıklamalar asla bloklanmaz.
-// Macera başladıktan sonra: landscape zorunlu, yanlış yönde oyun başlamaz/durur.
+// SAFE ORIENTATION FLOW PATCH v6
+// Menü tarafında ASLA bloklama yok: Android input/play donması düzeldi.
+// Macera başladıktan sonra: landscape zorunlu. Menüye dönünce landscape kapanır.
 // ═══════════════════════════════════════════════════
 (function(){
   let gameNeedsLandscape = false;
@@ -4686,7 +4686,6 @@ setTimeout(()=>ensureSettingsUI(),500);
       h: Math.round((vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0)
     };
   }
-  function isPortraitNow(){ const v=viewportSize(); return v.h >= v.w; }
   function isLandscapeNow(){ const v=viewportSize(); return v.w > v.h; }
 
   function ensureRotateOverlay(){
@@ -4698,75 +4697,69 @@ setTimeout(()=>ensureSettingsUI(),500);
     (document.getElementById('gc') || document.body).appendChild(ov);
     return ov;
   }
-  function showLandscapeOverlay(){
-    const ov = ensureRotateOverlay();
+  function setOverlayText(mode){
     const title=document.getElementById('rotatePhoneTitle');
     const text=document.getElementById('rotatePhoneText');
-    if(title) title.textContent = (typeof lang!=='undefined' && lang==='en') ? 'ROTATE YOUR PHONE' : 'TELEFONU YATAY ÇEVİR';
-    if(text) text.textContent = (typeof lang!=='undefined' && lang==='en') ? 'Adventure mode is played in landscape.' : 'Macera modu landscape oynanır.';
-    ov.style.display='flex';
+    const en=(typeof lang!=='undefined' && lang==='en');
+    if(mode==='portrait'){
+      if(title) title.textContent = en ? 'ROTATE YOUR PHONE VERTICAL' : 'TELEFONU DİKEY ÇEVİR';
+      if(text) text.textContent = en ? 'Menu is used in portrait mode.' : 'Menü dikey modda kullanılır.';
+    }else{
+      if(title) title.textContent = en ? 'ROTATE YOUR PHONE' : 'TELEFONU YATAY ÇEVİR';
+      if(text) text.textContent = en ? 'Adventure mode is played in landscape.' : 'Macera modu landscape oynanır.';
+    }
   }
-  function hideLandscapeOverlay(){
+  function showLandscapeOverlay(){
+    const ov = ensureRotateOverlay();
+    setOverlayText('landscape');
+    ov.style.display='flex';
+    ov.style.pointerEvents='all';
+  }
+  function hideRotateOverlay(){
     const ov=document.getElementById('rotateLandscapeOv');
-    if(ov) ov.style.display='none';
+    if(ov){ ov.style.display='none'; ov.style.pointerEvents='none'; }
   }
 
   async function tryLockLandscape(){
+    // Landscape lock çoğu Android WebView'da fullscreen ister. Bu sadece kullanıcı Play'e bastıktan sonra çalışır.
     try{
       const el=document.documentElement;
-      if(!document.fullscreenElement && el.requestFullscreen){
-        await el.requestFullscreen().catch(()=>{});
-      }
+      const req=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+      if(!document.fullscreenElement && req){ await req.call(el).catch(()=>{}); }
     }catch(e){}
-    try{
-      if(screen.orientation && screen.orientation.lock){
-        await screen.orientation.lock('landscape').catch(()=>{});
-      }
-    }catch(e){}
+    try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}
   }
-  async function tryLockPortraitMenu(){
-    // Menüde fullscreen'e girmiyoruz; yoksa Android/WebView input ve butonları takılabiliyor.
-    // Destek varsa sadece nazikçe portrait kilidi dener, olmazsa sessiz geçer.
-    try{
-      if(screen.orientation && screen.orientation.lock){
-        await screen.orientation.lock('portrait').catch(()=>{});
-      }
-    }catch(e){}
-  }
-  function tryUnlock(){
-    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
-  }
-
-  function forceMenuPortraitMode(){
+  function leaveGameOrientation(){
     gameNeedsLandscape=false;
     pendingControllerType=null;
     pausedByOrientation=false;
-    hideLandscapeOverlay();
+    hideRotateOverlay();
     document.body.classList.remove('game-landscape-required');
-    try{ if(typeof running!=='undefined') running=false; }catch(e){}
-    tryLockPortraitMenu();
+    document.body.classList.add('menu-portrait-required');
+    // Menüde portrait lock denemiyoruz. Android/Median'da input ve butonları dondurabiliyor.
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+    try{
+      if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    }catch(e){}
     setTimeout(()=>{try{resize()}catch(e){}},80);
     setTimeout(()=>{try{resize()}catch(e){}},300);
   }
-  function enableGameLandscapeMode(){
+  function enterGameOrientation(){
     gameNeedsLandscape=true;
     document.body.classList.add('game-landscape-required');
+    document.body.classList.remove('menu-portrait-required');
   }
 
   function canRunGameLoop(){
     const ov=document.getElementById('ov');
     const settings=document.getElementById('settingsOv');
-    const map=document.getElementById('mapOv');
-    const trans=document.getElementById('trans');
     const menuHidden=!ov || ov.style.display==='none';
     const settingsHidden=!settings || settings.style.display==='none';
-    // map/trans varsa loop şart değil; ama aktif oyun içindeysek devam edebilir.
     return gameNeedsLandscape && menuHidden && settingsHidden && typeof player!=='undefined' && !!player;
   }
-
   function orientationTick(){
     if(!gameNeedsLandscape || !isTouchDevice()){
-      hideLandscapeOverlay();
+      hideRotateOverlay();
       return;
     }
     if(!isLandscapeNow()){
@@ -4778,11 +4771,12 @@ setTimeout(()=>ensureSettingsUI(),500);
       }
       return;
     }
-    hideLandscapeOverlay();
+    hideRotateOverlay();
     if(pendingControllerType){
       const type=pendingControllerType;
       pendingControllerType=null;
       try{ __pangBaseStartWithControllerSafe(type); }catch(e){ console.error(e); }
+      forceMobileControlsVisible(type);
       setTimeout(()=>{try{resize()}catch(e){}},60);
       setTimeout(()=>{try{resize()}catch(e){}},300);
       return;
@@ -4797,14 +4791,27 @@ setTimeout(()=>ensureSettingsUI(),500);
     }
   }
 
+  function forceMobileControlsVisible(type){
+    if(!isTouchDevice()) return;
+    try{
+      const m=document.getElementById('mctrl');
+      if(m){ m.style.display='block'; m.style.position='fixed'; m.style.inset='0'; m.style.width='100vw'; m.style.height='100vh'; m.style.pointerEvents='none'; }
+      const joy=document.getElementById('joyCvsWrap');
+      const dpad=document.getElementById('dpadWrap');
+      if(joy) joy.style.display = type==='joystick' ? 'block' : 'none';
+      if(dpad) dpad.style.display = type==='dpad' ? 'flex' : 'none';
+    }catch(e){}
+  }
+
   const __pangBaseStartWithControllerSafe = startWithController;
   window.__pangBaseStartWithControllerSafe = __pangBaseStartWithControllerSafe;
   startWithController = function(type){
-    enableGameLandscapeMode();
+    selectedController = type || selectedController || 'joystick';
+    enterGameOrientation();
     resumeAC();
     tryLockLandscape();
     if(isTouchDevice() && !isLandscapeNow()){
-      pendingControllerType=type;
+      pendingControllerType=selectedController;
       try{ hideControllerSelect(); }catch(e){}
       try{ hideMenu(); }catch(e){}
       try{ const m=document.getElementById('mctrl'); if(m)m.style.display='none'; }catch(e){}
@@ -4813,32 +4820,32 @@ setTimeout(()=>ensureSettingsUI(),500);
       setTimeout(orientationTick,700);
       return;
     }
-    __pangBaseStartWithControllerSafe(type);
+    __pangBaseStartWithControllerSafe(selectedController);
+    forceMobileControlsVisible(selectedController);
     setTimeout(orientationTick,80);
+    setTimeout(()=>forceMobileControlsVisible(selectedController),180);
     setTimeout(orientationTick,350);
   };
 
   if(typeof showMenu==='function'){
     const __pangBaseShowMenuSafe=showMenu;
     showMenu=function(){
-      forceMenuPortraitMode();
+      leaveGameOrientation();
       return __pangBaseShowMenuSafe.apply(this,arguments);
     };
   }
   if(typeof softReturnToMainMenu==='function'){
     const __pangBaseSoftReturnSafe=softReturnToMainMenu;
     softReturnToMainMenu=function(){
-      forceMenuPortraitMode();
+      leaveGameOrientation();
       return __pangBaseSoftReturnSafe.apply(this,arguments);
     };
   }
   if(typeof showGameOver==='function'){
     const __pangBaseGameOverSafe=showGameOver;
     showGameOver=function(){
-      // Game over ekranı yine menü overlayinde gösteriliyor; burada artık input bloklama yok.
-      gameNeedsLandscape=false;
-      hideLandscapeOverlay();
-      tryLockPortraitMenu();
+      // Game over menü overlayine döner; burada landscape zorlamasını kapatıyoruz.
+      leaveGameOrientation();
       return __pangBaseGameOverSafe.apply(this,arguments);
     };
   }
@@ -4849,7 +4856,6 @@ setTimeout(()=>ensureSettingsUI(),500);
   document.addEventListener('fullscreenchange', ()=>setTimeout(orientationTick,150));
   document.addEventListener('webkitfullscreenchange', ()=>setTimeout(orientationTick,150));
 
-  // İlk yüklemede menü kilitlenmesin; sadece varsa eski overlayi kapat.
-  setTimeout(()=>{ if(!gameNeedsLandscape) hideLandscapeOverlay(); },120);
+  setTimeout(()=>{ document.body.classList.add('menu-portrait-required'); hideRotateOverlay(); },120);
 })();
 
