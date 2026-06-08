@@ -5066,3 +5066,88 @@ setTimeout(()=>ensureSettingsUI(),500);
   if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>setTimeout(tick,30),{passive:true});
   setInterval(tick,350);
 })();
+
+// ═══════════════════════════════════════════════════
+// V9 AUDIO REVIVE FIX
+// Landscape/controller fix sonrası mobilde müzik susarsa doğru moda göre tekrar başlatır.
+// Sadece ses akışını güçlendirir; controller/ekran ayarlarına dokunmaz.
+// ═══════════════════════════════════════════════════
+(function(){
+  let lastLevelMusicKick = 0;
+  function visible(id){
+    const el=document.getElementById(id);
+    return !!el && el.style.display !== 'none' && getComputedStyle(el).display !== 'none';
+  }
+  function currentWorldIndex(){
+    try{
+      if(typeof level !== 'undefined' && typeof getLevelCfg === 'function'){
+        return getLevelCfg(level).wi || 0;
+      }
+    }catch(e){}
+    return 0;
+  }
+  function reviveAudio(reason){
+    try{ if(typeof resumeAC === 'function') resumeAC(); }catch(e){}
+    try{
+      // Harita ve araç/uçak/roket geçişlerinde ara dünya müziği
+      if(visible('mapOv') || visible('trans')){
+        if(typeof playMapMusic === 'function') playMapMusic();
+        return;
+      }
+      // Ana menü açıkken ana menü müziği
+      const menu=document.getElementById('ov');
+      if(menu && menu.style.display !== 'none' && getComputedStyle(menu).display !== 'none'){
+        if(typeof startMenuMusic === 'function') startMenuMusic();
+        return;
+      }
+      // Oyun gerçekten koşuyorsa level müziği. Çok sık çağırıp parçayı başa sarmasın diye throttle var.
+      if(typeof running !== 'undefined' && running){
+        const now=Date.now();
+        if(now-lastLevelMusicKick>1800){
+          lastLevelMusicKick=now;
+          if(typeof setBGMWorld === 'function') setBGMWorld(currentWorldIndex());
+          if(typeof startBGM === 'function') startBGM(currentWorldIndex());
+        }
+      }
+    }catch(e){}
+  }
+
+  const oldStartCtrl = typeof startWithController === 'function' ? startWithController : null;
+  if(oldStartCtrl){
+    startWithController = function(type){
+      try{ if(typeof resumeAC === 'function') resumeAC(); }catch(e){}
+      const r = oldStartCtrl.apply(this, arguments);
+      [120,450,1000,1800,3200].forEach(ms=>setTimeout(()=>reviveAudio('startController'),ms));
+      return r;
+    };
+  }
+
+  const oldShowMenu = typeof showMenu === 'function' ? showMenu : null;
+  if(oldShowMenu){
+    showMenu = function(){
+      const r = oldShowMenu.apply(this, arguments);
+      [80,300,800].forEach(ms=>setTimeout(()=>reviveAudio('showMenu'),ms));
+      return r;
+    };
+  }
+
+  const oldShowTransition = typeof showTransition === 'function' ? showTransition : null;
+  if(oldShowTransition){
+    showTransition = function(){
+      const r = oldShowTransition.apply(this, arguments);
+      [50,400,1200,2400].forEach(ms=>setTimeout(()=>reviveAudio('transition'),ms));
+      return r;
+    };
+  }
+
+  ['pointerdown','touchstart','click','keydown'].forEach(ev=>{
+    document.addEventListener(ev,()=>setTimeout(()=>reviveAudio(ev),40),{passive:true});
+  });
+  window.addEventListener('orientationchange',()=>[180,700,1400].forEach(ms=>setTimeout(()=>reviveAudio('orientation'),ms)),{passive:true});
+  window.addEventListener('resize',()=>setTimeout(()=>reviveAudio('resize'),180),{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>setTimeout(()=>reviveAudio('vvresize'),180),{passive:true});
+
+  // Menü ilk açılışta sesin kaçmaması için
+  setTimeout(()=>reviveAudio('boot'),600);
+  setTimeout(()=>reviveAudio('boot2'),1600);
+})();
