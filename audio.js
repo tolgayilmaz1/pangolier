@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// PANGOLIER PRODUCTION AUDIO ENGINE — FIXED
+// PANGOLIER AUDIO ENGINE — MOBILE SAFE FIX
 // ana_menu.ogg -> ana menü
 // bolumler.ogg -> oyun içi, loop, her dünya/bölüm farklı noktadan
 // ara_dunya_harita.ogg -> harita / bölüm geçiş ekranları
@@ -9,26 +9,28 @@
   let unlocked=false;
   let currentMusic=null;
   let musicKind='none';
+  let wantedKind='none';
   let musicWorld=0;
-  const musicVol={menu:.45,level:.38,map:.55};
+  let masterVol=Number(localStorage.getItem('pangMusicVol')||'0.8');
+  if(!Number.isFinite(masterVol)) masterVol=.8;
+
+  const baseVol={menu:.60,level:.50,map:.65};
   const tracks={
     menu:new Audio(AUDIO_DIR+'ana_menu.ogg'),
     level:new Audio(AUDIO_DIR+'bolumler.ogg'),
     map:new Audio(AUDIO_DIR+'ara_dunya_harita.ogg')
   };
-  Object.values(tracks).forEach(a=>{a.loop=true;a.preload='auto';a.volume=.4;});
 
-  function fadeOut(a,ms=350){
-    if(!a)return;
-    const start=a.volume||0, t0=performance.now();
-    function step(t){
-      const p=Math.min(1,(t-t0)/ms);
-      a.volume=start*(1-p);
-      if(p<1)requestAnimationFrame(step);
-      else{try{a.pause();}catch{} a.volume=start;}
-    }
-    requestAnimationFrame(step);
-  }
+  Object.keys(tracks).forEach(k=>{
+    const a=tracks[k];
+    a.loop=true;
+    a.preload='auto';
+    a.playsInline=true;
+    a.setAttribute('playsinline','');
+    a.volume=(baseVol[k]||.5)*masterVol;
+  });
+
+  function targetVol(kind){return (baseVol[kind]||.5)*masterVol;}
 
   function safePlay(a){
     if(!a)return;
@@ -36,79 +38,149 @@
       a.muted=false;
       const p=a.play();
       if(p&&p.catch)p.catch(()=>{});
-    }catch{}
+    }catch(e){}
   }
 
-  function switchMusic(kind,offset,opts={}){
-    const next=tracks[kind];
-    if(!next)return;
-    const force=!!opts.force;
-    // Aynı müzik zaten çalıyorsa yeniden başa sarma; sadece devam ettir.
-    // Böylece dünya haritası -> araç/uçak animasyonunda müzik kopmaz.
-    if(currentMusic===next&&!next.paused&&!force){
-      next.muted=false;
-      next.volume=musicVol[kind]??.4;
-      safePlay(next);
-      return;
-    }
-    const old=currentMusic;
-    currentMusic=next;
-    musicKind=kind;
-    next.volume=0;
-    next.muted=false;
-    try{
-      const dur=Number.isFinite(next.duration)?next.duration:0;
-      if(typeof offset==='number'&&Number.isFinite(offset)&&dur>1){
-        next.currentTime=Math.min(Math.max(0,offset),Math.max(0,dur-1));
-      }else if(kind!=='level'&&force){
-        next.currentTime=0;
-      }
-    }catch{}
-    safePlay(next);
-    const target=musicVol[kind]??.4, t0=performance.now();
+  function fadeOut(a,ms=180){
+    if(!a)return;
+    const start=a.volume||0, t0=performance.now();
     function step(t){
-      if(currentMusic!==next)return;
-      const p=Math.min(1,(t-t0)/420);
-      next.volume=target*p;
+      const p=Math.min(1,(t-t0)/ms);
+      a.volume=start*(1-p);
       if(p<1)requestAnimationFrame(step);
+      else{try{a.pause();}catch(e){} a.volume=start;}
     }
     requestAnimationFrame(step);
-    if(old&&old!==next)fadeOut(old,180);
+  }
+
+  function pauseOthers(kind){
+    Object.keys(tracks).forEach(k=>{
+      if(k!==kind){try{tracks[k].pause();}catch(e){}}
+    });
   }
 
   function levelOffset(worldIndex=0){
     const a=tracks.level;
     const dur=(Number.isFinite(a.duration)&&a.duration>8)?a.duration:60;
-    return ((worldIndex*17.31)+(Date.now()%29000)/1000)%Math.max(8,dur-3);
+    return ((Number(worldIndex||0)*17.31)+((Date.now()%29000)/1000))%Math.max(8,dur-3);
   }
 
-  // Mobil/tarayıcı autoplay kilidini açar. ÖNEMLİ: çalan müziği artık pause etmiyor.
-  window.resumeAC=function(){
-    if(unlocked){
-      if(currentMusic&&currentMusic.paused)safePlay(currentMusic);
+  function switchMusic(kind,offset,opts={}){
+    const next=tracks[kind];
+    if(!next)return;
+    wantedKind=kind;
+
+    const force=!!opts.force;
+    if(currentMusic===next&&!next.paused&&!force){
+      next.volume=targetVol(kind);
+      safePlay(next);
       return;
     }
+
+    const old=currentMusic;
+    currentMusic=next;
+    musicKind=kind;
+    pauseOthers(kind);
+
+    try{
+      const dur=Number.isFinite(next.duration)?next.duration:0;
+      if(typeof offset==='number'&&Number.isFinite(offset)&&dur>1){
+        next.currentTime=Math.min(Math.max(0,offset),Math.max(0,dur-1));
+      }else if(force&&(kind==='menu'||kind==='map')){
+        next.currentTime=0;
+      }
+    }catch(e){}
+
+    next.volume=targetVol(kind);
+    safePlay(next);
+    if(old&&old!==next)fadeOut(old,120);
+  }
+
+  // Mobilde gerçek unlock: kullanıcı dokunuşunda kısa muted play/pause yapar.
+  function hardUnlock(){
+    if(unlocked)return;
     unlocked=true;
-    Object.values(tracks).forEach(a=>{try{a.load();}catch{}});
-    if(currentMusic)safePlay(currentMusic);
+    Object.keys(tracks).forEach(k=>{
+      const a=tracks[k];
+      try{a.load();}catch(e){}
+      try{
+        const oldMuted=a.muted, oldVol=a.volume;
+        a.muted=true;
+        a.volume=0;
+        const p=a.play();
+        if(p&&p.then){
+          p.then(()=>{
+            try{a.pause(); if(k!=='level')a.currentTime=0;}catch(e){}
+            a.muted=oldMuted;
+            a.volume=oldVol;
+          }).catch(()=>{a.muted=oldMuted;a.volume=oldVol;});
+        }else{
+          try{a.pause(); if(k!=='level')a.currentTime=0;}catch(e){}
+          a.muted=oldMuted;
+          a.volume=oldVol;
+        }
+      }catch(e){}
+    });
+  }
+
+  window.resumeAC=function(){
+    hardUnlock();
+    if(currentMusic){
+      currentMusic.volume=targetVol(musicKind);
+      safePlay(currentMusic);
+    }
   };
 
-  window.startMenuMusic=function(){switchMusic('menu',0,{force:false})};
-  window.startBGM=function(worldIndex=0){musicWorld=worldIndex;switchMusic('level',levelOffset(worldIndex),{force:true});};
-  window.setBGMWorld=function(worldIndex=0){musicWorld=worldIndex;};
+  window.startMenuMusic=function(){window.resumeAC();switchMusic('menu',0,{force:false});};
+  window.playMapMusic=function(){window.resumeAC();switchMusic('map',0,{force:false});};
+  window.forceMapMusic=function(){window.resumeAC();switchMusic('map',0,{force:true});};
+  window.setBGMWorld=function(worldIndex=0){musicWorld=Number(worldIndex||0);};
+  window.startBGM=function(worldIndex=0){window.resumeAC();musicWorld=Number(worldIndex||0);switchMusic('level',levelOffset(musicWorld),{force:true});};
 
-  // Sadece oyun içi müziği durdurur. Harita müziğini yanlışlıkla kesmez.
   window.stopBGM=function(){
-    if(musicKind==='level'&&currentMusic){fadeOut(currentMusic,300);currentMusic=null;musicKind='none';}
+    if(musicKind==='level'&&currentMusic){fadeOut(currentMusic,180);currentMusic=null;musicKind='none';}
+  };
+  window.stopMapMusic=function(){
+    if(musicKind==='map'&&currentMusic){fadeOut(currentMusic,160);currentMusic=null;musicKind='none';}
   };
   window.stopAllMusic=function(){
-    if(currentMusic)fadeOut(currentMusic,300);
-    currentMusic=null;musicKind='none';
+    if(currentMusic)fadeOut(currentMusic,180);
+    currentMusic=null;musicKind='none';wantedKind='none';
   };
-  window.playMapMusic=function(){switchMusic('map',0,{force:false})};
-  window.forceMapMusic=function(){switchMusic('map',0,{force:true})};
-  window.stopMapMusic=function(){if(musicKind==='map'&&currentMusic){fadeOut(currentMusic,220);currentMusic=null;musicKind='none';}};
 
+  window.setMusicVolume=function(v){
+    const n=Math.max(0,Math.min(1,Number(v)));
+    masterVol=n;
+    try{localStorage.setItem('pangMusicVol',String(n));}catch(e){}
+    Object.keys(tracks).forEach(k=>{tracks[k].volume=targetVol(k);});
+  };
+  window.getMusicVolume=function(){return masterVol;};
+
+  // State'e göre müziği toparla. Bu sadece audio tarafı; ekran/controller'a dokunmaz.
+  window.__pangAudioSync=function(){
+    try{
+      const visible=id=>{const el=document.getElementById(id);return !!el&&el.style.display!=='none'&&getComputedStyle(el).display!=='none';};
+      if(visible('mapOv')||visible('trans')){if(wantedKind!=='map'||!currentMusic||currentMusic.paused)window.playMapMusic();return;}
+      const ov=document.getElementById('ov');
+      if(ov&&ov.style.display!=='none'&&getComputedStyle(ov).display!=='none'){
+        if(wantedKind!=='menu'||!currentMusic||currentMusic.paused)window.startMenuMusic();return;
+      }
+      if(typeof running!=='undefined'&&running){
+        if(wantedKind!=='level'||!currentMusic||currentMusic.paused)window.startBGM(musicWorld);return;
+      }
+    }catch(e){}
+  };
+
+  ['pointerdown','touchstart','click','keydown'].forEach(ev=>{
+    document.addEventListener(ev,()=>{window.resumeAC();setTimeout(()=>window.__pangAudioSync(),0);},{passive:true});
+  });
+  window.addEventListener('orientationchange',()=>[120,450,900,1600].forEach(ms=>setTimeout(()=>window.__pangAudioSync(),ms)),{passive:true});
+  window.addEventListener('resize',()=>setTimeout(()=>window.__pangAudioSync(),180),{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>setTimeout(()=>window.__pangAudioSync(),180),{passive:true});
+  setInterval(()=>{if(unlocked)window.__pangAudioSync();},1000);
+  setTimeout(()=>{try{if(document.getElementById('ov'))window.startMenuMusic();}catch(e){}},350);
+
+  // SFX layer
   let ac=null;
   function ctx(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();return ac;}catch{return null;}}
   function tone(freq=440,dur=.08,type='sine',gain=.05,slide=0){
@@ -126,15 +198,6 @@
     for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);
     const s=c.createBufferSource(), g=c.createGain(); s.buffer=b; g.gain.value=gain; s.connect(g); g.connect(c.destination); s.start();
   }
-
-  window.setMusicVolume=function(v){
-    const n=Math.max(0,Math.min(1,Number(v)));
-    musicVol.menu=n*.60; musicVol.level=n*.50; musicVol.map=n*.65;
-    if(currentMusic)currentMusic.volume=musicVol[musicKind]??n;
-    try{localStorage.setItem('pangMusicVol',String(n));}catch{}
-  };
-  window.getMusicVolume=function(){try{return Number(localStorage.getItem('pangMusicVol')||'0.8')}catch{return .8}};
-  setTimeout(()=>window.setMusicVolume(window.getMusicVolume()),0);
 
   window.SFX={
     pop:(sz=1)=>{tone(520+sz*90,.06,'triangle',.045,260);noise(.055,.035)},
@@ -154,5 +217,4 @@
     fire:()=>{tone(620,.04,'square',.018,-120);noise(.022,.010)},
     achievement:()=>{[660,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,.11,'sine',.04,90),i*80))}
   };
-  ['pointerdown','touchstart','keydown','click'].forEach(ev=>window.addEventListener(ev,()=>resumeAC(),{once:true,passive:true}));
 })();

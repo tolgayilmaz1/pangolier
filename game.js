@@ -5068,132 +5068,52 @@ setTimeout(()=>ensureSettingsUI(),500);
 })();
 
 // ═══════════════════════════════════════════════════
-// V10 DIRECT MUSIC ENGINE — controller/landscape fixlerine dokunmaz
-// audio.js çağrıları mobile/orientation sırasında susarsa müziği game.js içinden garanti bağlar.
+// V11 MUSIC RESYNC HOOK — ekran/controller fixine dokunmaz
+// Sadece mevcut audio.js motoruna durum değişince yeniden sync dedirtir.
 // ═══════════════════════════════════════════════════
 (function(){
-  const AUDIO_DIR = 'assets/audio/';
-  const isMobile = () => ('ontouchstart' in window) || ((navigator.maxTouchPoints||0) > 0);
-  const tracks = {
-    menu: new Audio(AUDIO_DIR + 'ana_menu.ogg'),
-    map:  new Audio(AUDIO_DIR + 'ara_dunya_harita.ogg'),
-    level:new Audio(AUDIO_DIR + 'bolumler.ogg')
-  };
-  let unlocked = false;
-  let current = null;
-  let currentKind = 'none';
-  let wantedKind = 'none';
-  let lastLevelWorld = 0;
-  let masterVol = 0.8;
-
-  try{ masterVol = Number(localStorage.getItem('pangMusicVol') || '0.8'); }catch(e){}
-  masterVol = Math.max(0, Math.min(1, Number.isFinite(masterVol) ? masterVol : 0.8));
-
-  const vol = { menu:0.45, map:0.55, level:0.38 };
-  Object.keys(tracks).forEach(k=>{
-    const a = tracks[k];
-    a.loop = true;
-    a.preload = 'auto';
-    a.playsInline = true;
-    a.volume = vol[k] * masterVol;
-  });
-
-  function safePlay(a){
-    if(!a) return;
-    try{
-      a.muted = false;
-      a.volume = (vol[currentKind] || 0.4) * masterVol;
-      const p = a.play();
-      if(p && p.catch) p.catch(()=>{});
-    }catch(e){}
+  function audioSyncLater(){
+    try{ if(typeof window.__pangAudioSync==='function') window.__pangAudioSync(); }catch(e){}
+    setTimeout(()=>{try{ if(typeof window.__pangAudioSync==='function') window.__pangAudioSync(); }catch(e){}},220);
+    setTimeout(()=>{try{ if(typeof window.__pangAudioSync==='function') window.__pangAudioSync(); }catch(e){}},900);
   }
-  function pauseOther(kind){
-    Object.keys(tracks).forEach(k=>{
-      if(k !== kind){ try{ tracks[k].pause(); }catch(e){} }
-    });
+  ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,audioSyncLater,{passive:true}));
+  window.addEventListener('orientationchange',audioSyncLater,{passive:true});
+  window.addEventListener('resize',audioSyncLater,{passive:true});
+  if(typeof startWithController==='function'){
+    const __v11Start=startWithController;
+    startWithController=function(type){
+      try{ if(typeof window.resumeAC==='function') window.resumeAC(); }catch(e){}
+      const r=__v11Start.apply(this,arguments);
+      audioSyncLater();
+      return r;
+    };
   }
-  function levelOffset(worldIndex){
-    const a = tracks.level;
-    const dur = Number.isFinite(a.duration) && a.duration > 8 ? a.duration : 90;
-    return ((Number(worldIndex||0) * 17.31) + ((Date.now()%37000)/1000)) % Math.max(8, dur-3);
+  if(typeof showMenu==='function'){
+    const __v11ShowMenu=showMenu;
+    showMenu=function(){
+      const r=__v11ShowMenu.apply(this,arguments);
+      try{ if(typeof window.startMenuMusic==='function') window.startMenuMusic(); }catch(e){}
+      audioSyncLater();
+      return r;
+    };
   }
-  function playKind(kind, opts={}){
-    if(!tracks[kind]) return;
-    wantedKind = kind;
-    currentKind = kind;
-    current = tracks[kind];
-    pauseOther(kind);
-    try{
-      if(kind === 'level' && opts.force){
-        current.currentTime = levelOffset(lastLevelWorld);
-      }
-      if((kind === 'menu' || kind === 'map') && opts.restart){
-        current.currentTime = 0;
-      }
-    }catch(e){}
-    safePlay(current);
+  if(typeof showMap==='function'){
+    const __v11ShowMap=showMap;
+    showMap=function(){
+      try{ if(typeof window.playMapMusic==='function') window.playMapMusic(); }catch(e){}
+      const r=__v11ShowMap.apply(this,arguments);
+      audioSyncLater();
+      return r;
+    };
   }
-
-  const oldResume = window.resumeAC;
-  window.resumeAC = function(){
-    unlocked = true;
-    try{ if(typeof oldResume === 'function') oldResume(); }catch(e){}
-    try{ Object.values(tracks).forEach(a=>a.load && a.load()); }catch(e){}
-    if(current) safePlay(current);
-  };
-
-  window.startMenuMusic = function(){ playKind('menu'); };
-  window.playMapMusic = function(){ playKind('map'); };
-  window.forceMapMusic = function(){ playKind('map', {restart:true}); };
-  window.setBGMWorld = function(worldIndex){ lastLevelWorld = Number(worldIndex||0); };
-  window.startBGM = function(worldIndex){ lastLevelWorld = Number(worldIndex||0); playKind('level', {force:true}); };
-  window.stopBGM = function(){ if(currentKind === 'level'){ try{ tracks.level.pause(); }catch(e){} currentKind='none'; current=null; } };
-  window.stopMapMusic = function(){ if(currentKind === 'map'){ try{ tracks.map.pause(); }catch(e){} currentKind='none'; current=null; } };
-  window.stopAllMusic = function(){ Object.values(tracks).forEach(a=>{try{a.pause();}catch(e){}}); currentKind='none'; current=null; wantedKind='none'; };
-  window.setMusicVolume = function(v){
-    masterVol = Math.max(0, Math.min(1, Number(v)));
-    try{ localStorage.setItem('pangMusicVol', String(masterVol)); }catch(e){}
-    Object.keys(tracks).forEach(k=>{ tracks[k].volume = vol[k] * masterVol; });
-  };
-  window.getMusicVolume = function(){ return masterVol; };
-
-  function visible(id){
-    const el = document.getElementById(id);
-    return !!el && el.style.display !== 'none' && getComputedStyle(el).display !== 'none';
+  if(typeof showTransition==='function'){
+    const __v11ShowTrans=showTransition;
+    showTransition=function(){
+      try{ if(typeof window.playMapMusic==='function') window.playMapMusic(); }catch(e){}
+      const r=__v11ShowTrans.apply(this,arguments);
+      audioSyncLater();
+      return r;
+    };
   }
-  function syncWantedMusic(){
-    try{
-      if(visible('mapOv') || visible('trans')){ if(wantedKind !== 'map') playKind('map'); return; }
-      const menu = document.getElementById('ov');
-      if(menu && menu.style.display !== 'none' && getComputedStyle(menu).display !== 'none'){
-        if(wantedKind !== 'menu') playKind('menu');
-        return;
-      }
-      if(typeof running !== 'undefined' && running){
-        if(wantedKind !== 'level') playKind('level');
-        return;
-      }
-    }catch(e){}
-  }
-
-  ['pointerdown','touchstart','click','keydown'].forEach(ev=>{
-    document.addEventListener(ev,()=>{
-      window.resumeAC();
-      syncWantedMusic();
-      if(current) safePlay(current);
-    },{passive:true});
-  });
-
-  window.addEventListener('orientationchange',()=>[150,600,1200,2200].forEach(ms=>setTimeout(()=>{syncWantedMusic(); if(current) safePlay(current);},ms)),{passive:true});
-  window.addEventListener('resize',()=>setTimeout(()=>{syncWantedMusic(); if(current) safePlay(current);},220),{passive:true});
-  if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>setTimeout(()=>{syncWantedMusic(); if(current) safePlay(current);},220),{passive:true});
-
-  // Menü ilk açılışı: kullanıcı tıklayana kadar play reddedilse bile wantedKind hazır kalır.
-  setTimeout(()=>{ if(visible('ov')) window.startMenuMusic(); },350);
-
-  // Watchdog: mobile'da orientation/fullscreen sonrası audio paused kalırsa tekrar dener.
-  setInterval(()=>{
-    syncWantedMusic();
-    if(unlocked && current && current.paused) safePlay(current);
-  },900);
 })();
