@@ -4885,3 +4885,184 @@ setTimeout(()=>ensureSettingsUI(),500);
   setTimeout(()=>{ document.body.classList.add('menu-portrait-required'); hideRotateOverlay(); },120);
 })();
 
+
+// ═══════════════════════════════════════════════════
+// V8 HARD FIX — sadece 2 şey:
+// 1) Landscape oyun ekranını viewport'a tam bas
+// 2) Seçilen joystick/dpad kontrolünü oyun boyunca zorla görünür tut
+// ═══════════════════════════════════════════════════
+(function(){
+  let __pangSelectedCtrlV8 = window.selectedController || 'joystick';
+
+  function vv(){
+    const v=window.visualViewport;
+    return {
+      w:Math.max(1,Math.round((v&&v.width)||window.innerWidth||document.documentElement.clientWidth||640)),
+      h:Math.max(1,Math.round((v&&v.height)||window.innerHeight||document.documentElement.clientHeight||360))
+    };
+  }
+  function landscapeActive(){
+    const s=vv();
+    const menu=document.getElementById('ov');
+    const menuHidden=!menu || menu.style.display==='none';
+    return document.body.classList.contains('game-landscape-required') && s.w>s.h && menuHidden;
+  }
+
+  function forceFullLandscapeCanvas(){
+    const s=vv();
+    const gc=document.getElementById('gc');
+    const c=document.getElementById('c');
+    if(!gc||!c)return;
+
+    if(landscapeActive()){
+      document.documentElement.style.setProperty('--app-height',s.h+'px');
+      gc.style.setProperty('position','fixed','important');
+      gc.style.setProperty('inset','0','important');
+      gc.style.setProperty('width',s.w+'px','important');
+      gc.style.setProperty('height',s.h+'px','important');
+      gc.style.setProperty('display','block','important');
+      gc.style.setProperty('overflow','hidden','important');
+      gc.style.setProperty('background','#000','important');
+
+      // 640x480 native canvası CSS ile ekrana TAM basıyoruz.
+      // Böylece eski 4:3 hesap yüzünden sağ/sol siyah boşluk kalmaz.
+      c.style.setProperty('position','absolute','important');
+      c.style.setProperty('left','0','important');
+      c.style.setProperty('top','0','important');
+      c.style.setProperty('width',s.w+'px','important');
+      c.style.setProperty('height',s.h+'px','important');
+      c.style.setProperty('max-width','none','important');
+      c.style.setProperty('max-height','none','important');
+      c.style.setProperty('margin','0','important');
+      c.style.setProperty('display','block','important');
+      c.style.setProperty('object-fit','fill','important');
+
+      ['hud','powerHud','tut'].forEach(id=>{const el=document.getElementById(id); if(el){el.style.setProperty('width',s.w+'px','important');}});
+    }
+  }
+
+  function forceControls(type){
+    if(type) __pangSelectedCtrlV8=type;
+    if(!landscapeActive())return;
+    const typeNow=__pangSelectedCtrlV8 || window.selectedController || 'joystick';
+    const m=document.getElementById('mctrl');
+    const joy=document.getElementById('joyCvsWrap');
+    const dpad=document.getElementById('dpadWrap');
+    const joyCanvas=document.getElementById('joyCanvas');
+    if(!m)return;
+
+    m.style.setProperty('display','block','important');
+    m.style.setProperty('position','fixed','important');
+    m.style.setProperty('left','0','important');
+    m.style.setProperty('top','0','important');
+    m.style.setProperty('right','0','important');
+    m.style.setProperty('bottom','0','important');
+    m.style.setProperty('width','100vw','important');
+    m.style.setProperty('height','100vh','important');
+    m.style.setProperty('height','100dvh','important');
+    m.style.setProperty('z-index','2147483000','important');
+    m.style.setProperty('pointer-events','none','important');
+
+    if(joy){
+      joy.style.setProperty('display',typeNow==='joystick'?'block':'none','important');
+      joy.style.setProperty('position','fixed','important');
+      joy.style.setProperty('inset','0','important');
+      joy.style.setProperty('width','100vw','important');
+      joy.style.setProperty('height','100vh','important');
+      joy.style.setProperty('height','100dvh','important');
+      joy.style.setProperty('pointer-events','none','important');
+    }
+    if(dpad){
+      dpad.style.setProperty('display',typeNow==='dpad'?'block':'none','important');
+      dpad.style.setProperty('position','fixed','important');
+      dpad.style.setProperty('inset','0','important');
+      dpad.style.setProperty('width','100vw','important');
+      dpad.style.setProperty('height','100vh','important');
+      dpad.style.setProperty('height','100dvh','important');
+      dpad.style.setProperty('pointer-events','none','important');
+    }
+    if(joyCanvas){
+      joyCanvas.style.setProperty('display','block','important');
+      joyCanvas.style.setProperty('position','fixed','important');
+      joyCanvas.style.setProperty('left','18px','important');
+      joyCanvas.style.setProperty('bottom','14px','important');
+      joyCanvas.style.setProperty('width','150px','important');
+      joyCanvas.style.setProperty('height','150px','important');
+      joyCanvas.style.setProperty('pointer-events','all','important');
+      joyCanvas.style.setProperty('z-index','2147483001','important');
+    }
+
+    // joystick modundaki sağ buton kolonunu yakala
+    if(joy){
+      const rightCol=joy.querySelector('div');
+      if(rightCol){
+        rightCol.style.setProperty('display','flex','important');
+        rightCol.style.setProperty('position','fixed','important');
+        rightCol.style.setProperty('right','18px','important');
+        rightCol.style.setProperty('bottom','18px','important');
+        rightCol.style.setProperty('z-index','2147483001','important');
+        rightCol.style.setProperty('pointer-events','all','important');
+      }
+    }
+    // dpad modundaki sol ve sağ kolonlar
+    if(dpad){
+      const kids=dpad.children;
+      if(kids[0]){
+        kids[0].style.setProperty('display','flex','important');
+        kids[0].style.setProperty('position','fixed','important');
+        kids[0].style.setProperty('left','18px','important');
+        kids[0].style.setProperty('bottom','18px','important');
+        kids[0].style.setProperty('z-index','2147483001','important');
+        kids[0].style.setProperty('pointer-events','all','important');
+      }
+      if(kids[1]){
+        kids[1].style.setProperty('display','flex','important');
+        kids[1].style.setProperty('position','fixed','important');
+        kids[1].style.setProperty('right','18px','important');
+        kids[1].style.setProperty('bottom','18px','important');
+        kids[1].style.setProperty('z-index','2147483001','important');
+        kids[1].style.setProperty('pointer-events','all','important');
+      }
+    }
+
+    ['btnLeft','btnRight','btnUp','btnUpD','btnFire','btnFireD'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        el.style.setProperty('display','flex','important');
+        el.style.setProperty('pointer-events','all','important');
+        el.style.setProperty('touch-action','none','important');
+        el.style.setProperty('z-index','2147483002','important');
+      }
+    });
+  }
+
+  const oldStart = typeof startWithController==='function' ? startWithController : null;
+  if(oldStart){
+    startWithController=function(type){
+      __pangSelectedCtrlV8=type||__pangSelectedCtrlV8||'joystick';
+      window.selectedController=__pangSelectedCtrlV8;
+      const r=oldStart.apply(this,arguments);
+      [50,180,450,900,1500,2500,3500,5000].forEach(ms=>setTimeout(()=>{forceFullLandscapeCanvas();forceControls(__pangSelectedCtrlV8);},ms));
+      return r;
+    };
+  }
+
+  const oldResize = typeof resize==='function' ? resize : null;
+  if(oldResize){
+    resize=function(){
+      const r=oldResize.apply(this,arguments);
+      forceFullLandscapeCanvas();
+      forceControls(__pangSelectedCtrlV8);
+      return r;
+    };
+  }
+
+  function tick(){
+    forceFullLandscapeCanvas();
+    forceControls(__pangSelectedCtrlV8);
+  }
+  window.addEventListener('resize',()=>setTimeout(tick,30),{passive:true});
+  window.addEventListener('orientationchange',()=>{setTimeout(tick,80);setTimeout(tick,350);setTimeout(tick,900);},{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>setTimeout(tick,30),{passive:true});
+  setInterval(tick,350);
+})();
